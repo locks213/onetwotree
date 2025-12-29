@@ -5,58 +5,153 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration Atelier</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
-        /* Un peu de style juste pour l'admin */
+        /* Styles spécifiques à l'admin */
+        body { background-color: #f4f4f4; }
         .admin-container {
             max-width: 500px;
-            margin: 100px auto;
+            margin: 50px auto;
             padding: 30px;
-            background: rgba(255,255,255,0.9);
-            border: 2px solid #5a4a42;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
             text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        button { cursor: pointer; padding: 10px 20px; background: #D8BFD8; border: none; font-weight: bold; }
-        .hidden { display: none; }
-        .product-item { display: flex; justify-content: space-between; border-bottom: 1px solid #ccc; padding: 5px; }
-        .delete-btn { color: red; cursor: pointer; }
+        
+        /* Dashboard plus large */
+        #dashboard-section { max-width: 800px; }
+
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            box-sizing: border-box; 
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button { 
+            cursor: pointer; 
+            padding: 12px 20px; 
+            background: #333; 
+            color: white;
+            border: none; 
+            font-weight: bold; 
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        button:hover { background: #555; }
+
+        .hidden { display: none !important; }
+
+        /* Liste des produits */
+        .product-list-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            background: #fff;
+            border-bottom: 1px solid #eee; 
+            padding: 10px; 
+        }
+        .product-list-item:hover { background-color: #fafafa; }
+        .delete-btn { color: red; cursor: pointer; font-size: 0.9em; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="login-section" class="admin-container">
         <h2>Espace Artisan</h2>
-        <form id="login-form" onsubmit="login(); return false;">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Mot de passe">
+        <p style="color:#666; font-size:0.9em;">Connectez-vous pour gérer le catalogue.</p>
+        
+        <form onsubmit="loginAdmin(event)">
+            <input type="email" id="admin-email" placeholder="Email Administrateur" required>
+            <input type="password" id="admin-password" placeholder="Mot de passe" required>
             <button type="submit">Se connecter</button>
         </form>
         <p id="login-msg" style="color:red; margin-top:10px;"></p>
     </div>
 
-    <div id="dashboard-section" class="admin-container hidden" style="max-width: 800px;">
-        <h2>Ajouter une création</h2>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <input type="text" id="new-titre" placeholder="Titre (ex: Vase)" style="flex:1;">
-            <input type="number" id="new-prix" placeholder="Prix" style="width:100px;">
-            <input type="text" id="new-image" placeholder="Image (ex: vase.jpg)" style="flex:1;">
-            <select id="new-cat" style="width:150px;">
-                <option value="Thème">Thème</option>
-                <option value="Catalogue">Catalogue</option>
-            </select>
+    <div id="dashboard-section" class="admin-container hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0;">Gestion du Catalogue</h2>
+            <button onclick="logoutClient()" style="background:#cc0000; padding:5px 10px; font-size:0.8em;">Déconnexion</button>
         </div>
-        <button onclick="ajouterProduit()" style="width:100%; margin-top:10px;">Mettre en ligne</button>
-        
-        <hr style="margin:30px 0;">
-        
-        <h3>Produits en ligne</h3>
-        <div id="admin-product-list" style="text-align: left;">
-            </div>
 
-        <button onclick="logout()" style="background:#ccc; margin-top:30px;">Déconnexion</button>
+        <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <h3 style="margin-top:0;">Ajouter une création</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <input type="text" id="new-titre" placeholder="Titre (ex: Vase en céramique)" style="flex:2;">
+                <input type="number" id="new-prix" placeholder="Prix (€)" style="flex:1;">
+            </div>
+            <input type="text" id="new-image" placeholder="Lien de l'image (ex: img/mon-vase.jpg ou https://...)" style="width:100%;">
+            
+            <button onclick="ajouterProduit()" style="width:100%; margin-top:10px;">Mettre en ligne</button>
+        </div>
+        
+        <hr style="margin:30px 0; border:0; border-top:1px solid #eee;">
+        
+        <h3 style="text-align:left;">Produits en ligne</h3>
+        <div id="admin-product-list" style="text-align: left; max-height: 400px; overflow-y: auto;">
+            <p>Chargement...</p>
+        </div>
     </div>
 
     <script src="script.js"></script>
+
+    <script>
+        // Fonction de connexion spécifique à cette page Admin
+        async function loginAdmin(event) {
+            event.preventDefault(); // Empêche le rechargement de page
+            
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const msgDiv = document.getElementById('login-msg');
+
+            msgDiv.innerText = "Connexion en cours...";
+
+            // On utilise la variable 'supabase' qui est dans script.js
+            const { data, error } = await supabase.auth.signInWithPassword({ 
+                email: email, 
+                password: password 
+            });
+
+            if (error) {
+                msgDiv.innerText = "Erreur : " + error.message;
+            } else {
+                msgDiv.innerText = "";
+                // On recharge la page pour que la vérification de session se fasse
+                location.reload();
+            }
+        }
+
+        // Vérification au chargement de la page
+        window.addEventListener('load', async () => {
+            // Attendre un tout petit peu que script.js initialise Supabase
+            setTimeout(async () => {
+                if(!supabase) return;
+
+                const { data: { session } } = await supabase.auth.getSession();
+
+                if (session) {
+                    // Si connecté : Cacher Login, Montrer Dashboard
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('dashboard-section').classList.remove('hidden');
+                    
+                    // Charger la liste (fonction venant de script.js)
+                    if(typeof chargerListeAdmin === 'function') {
+                        chargerListeAdmin();
+                    }
+                } else {
+                    // Si pas connecté : Montrer Login, Cacher Dashboard
+                    document.getElementById('login-section').classList.remove('hidden');
+                    document.getElementById('dashboard-section').classList.add('hidden');
+                }
+            }, 100);
+        });
+    </script>
 </body>
 </html>
