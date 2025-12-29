@@ -36,7 +36,7 @@ async function chargerVitrine() {
             const imageSrc = prod.image_file ? prod.image_file : 'https://via.placeholder.com/300?text=Pas+d+image';
             
             card.innerHTML = `
-                <img src="${imageSrc}" alt="${prod.titre}" style="width:100%; height:200px; object-fit:cover;">
+                <img src="${imageSrc}" alt="${prod.titre}" style="width:100%; height:200px; object-fit:contain; background: #000000ff">
                 <h3>${prod.titre}</h3>
                 <p>${prod.prix} €</p>
                 <button onclick="acheter('${prod.titre}', ${prod.prix})">Acheter</button>
