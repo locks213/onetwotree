@@ -50,7 +50,7 @@ async function chargerVitrine() {
 
 function acheter(titre, prix) {
     // ⚠️ REMPLACE PAR TON ADRESSE PAYPAL (Celle de ton compte)
-    const emailPayPal = "ton-email-paypal@gmail.com"; 
+    const emailPayPal = "xavier.frassinelli@gmail.com"; 
     
     // On demande confirmation à l'utilisateur
     if(confirm(`Voulez-vous être redirigé vers PayPal pour acheter "${titre}" à ${prix}€ ?`)) {
