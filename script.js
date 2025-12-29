@@ -2,12 +2,23 @@
 const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
 const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; 
 
+// Configuration admin
+const ADMIN_EMAIL = 'xavier.frassinelli@gmail.com';
+
 // Initialisation de Supabase (Vérification de sécurité)
 let supabaseClient;
 if (window.supabase) {
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
     console.error("Supabase SDK non chargé. Vérifiez le <head> de votre HTML.");
+}
+
+// --- 1.5. UTILITAIRES ADMIN ---
+async function verifierAdmin() {
+    if (!supabaseClient) return false;
+    
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    return session && session.user.email === ADMIN_EMAIL;
 }
 
 // --- 2. GESTION DU PANIER (LOCAL) ---
@@ -174,15 +185,18 @@ function basculerModeAuth() {
     const title = document.getElementById('auth-title');
     const btn = document.getElementById('auth-action-btn');
     const toggleText = document.getElementById('auth-toggle-text');
+    const toggleLink = document.getElementById('auth-toggle-link');
     
     if (modeInscription) {
         title.innerText = "Créer un compte";
         btn.innerText = "M'inscrire";
         toggleText.innerText = "Déjà un compte ?";
+        toggleLink.innerText = "Se connecter";
     } else {
         title.innerText = "Connexion";
         btn.innerText = "Se connecter";
         toggleText.innerText = "Pas encore de compte ?";
+        toggleLink.innerText = "Créer un compte";
     }
 }
 
@@ -213,11 +227,32 @@ async function gererAuth() {
     }
 }
 
+async function loginAdmin(event) {
+    event.preventDefault();
+    const email = document.getElementById('admin-email').value;
+    const password = document.getElementById('admin-password').value;
+
+    if (!email || !password) {
+        document.getElementById('login-msg').innerText = "Veuillez remplir tous les champs.";
+        return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+        document.getElementById('login-msg').innerText = "Erreur : " + error.message;
+    } else {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        chargerListeAdmin();
+    }
+}
+
 async function logoutClient() {
     await supabaseClient.auth.signOut();
     alert("Vous avez été déconnecté.");
     verificationSession();
-    location.reload();
+    window.location.href = 'index.html';
 }
 
 async function verificationSession() {
@@ -297,6 +332,13 @@ async function chargerListeAdmin() {
 }
 
 async function ajouterProduit() {
+    // Vérification admin
+    const isAdmin = await verifierAdmin();
+    if (!isAdmin) {
+        alert("Accès refusé : Seuls les administrateurs peuvent ajouter des produits.");
+        return;
+    }
+
     const titreInput = document.getElementById('new-titre');
     const prixInput = document.getElementById('new-prix');
     const imgInput = document.getElementById('new-image'); // URL de l'image
@@ -319,10 +361,26 @@ async function ajouterProduit() {
 }
 
 async function supprimerProduit(id) {
+    // Vérification admin
+    const isAdmin = await verifierAdmin();
+    if (!isAdmin) {
+        alert("Accès refusé : Seuls les administrateurs peuvent supprimer des produits.");
+        return;
+    }
+
+    console.log("Tentative de suppression du produit ID:", id);
     if(confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
+        console.log("Confirmation reçue, suppression en cours...");
         const { error } = await supabaseClient.from('produits').delete().eq('id', id);
-        if(error) alert("Erreur suppression: " + error.message);
-        else chargerListeAdmin();
+        if(error) {
+            console.error("Erreur suppression:", error);
+            alert("Erreur suppression: " + error.message);
+        } else {
+            console.log("Suppression réussie");
+            chargerListeAdmin();
+        }
+    } else {
+        console.log("Suppression annulée");
     }
 }
 
