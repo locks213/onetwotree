@@ -39,6 +39,11 @@
                     <a href="admin.html" style="font-size:0.8em; color:gray;">Admin</a>
                 </div>
             </li>
+                        <li class="dropdown">
+                <a href="#">Panier</a>
+                <div class="dropdown-content">
+                    <a href="#">Consulter mon panier</a>
+            </li>
             <li class="dropdown">
                 <a href="#">Se connecter</a>
                 <div class="dropdown-content">
@@ -51,6 +56,19 @@
 
     <main class="showcase">
         <h1>Bienvenue à l'Atelier</h1>
+        <button id="cart-btn" onclick="toggleCart()" style="position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">
+    Panier (0)
+</button>
+
+<div id="cart-modal" style="display: none; position: fixed; top: 70px; right: 20px; width: 300px; background: white; border: 2px solid #333; padding: 20px; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+    <h3>Votre Panier</h3>
+    <ul id="cart-items" style="list-style: none; padding: 0;">
+        </ul>
+    <hr>
+    <p><strong>Total : <span id="cart-total">0</span> €</strong></p>
+    <button onclick="payerPanier()" style="width: 100%; background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">Payer tout</button>
+    <button onclick="viderPanier()" style="width: 100%; background: #f44336; color: white; padding: 5px; border: none; cursor: pointer; margin-top: 10px;">Vider</button>
+</div>
         <p class="intro-text">Découvrez nos créations uniques, faites main.</p>
         
         <div class="gallery-grid" id="gallery-container">

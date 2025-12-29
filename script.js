@@ -39,7 +39,7 @@ async function chargerVitrine() {
                 <img src="${imageSrc}" alt="${prod.titre}" style="width:100%; height:200px; object-fit:contain; background: #000000ff">
                 <h3>${prod.titre}</h3>
                 <p>${prod.prix} €</p>
-                <button onclick="acheter('${prod.titre}', ${prod.prix})">Acheter</button>
+                <button onclick="ajouterAuPanier('${prod.titre}', ${prod.prix})">Ajouter au panier</button>
             `;
             container.appendChild(card);
         });
@@ -156,3 +156,83 @@ window.onload = function() {
         });
     }
 };
+// --- 5. GESTION DU PANIER ---
+
+// On charge le panier depuis la mémoire du navigateur
+let panier = JSON.parse(localStorage.getItem('monPanier')) || [];
+// On lance l'affichage au démarrage (s'il y a des choses en mémoire)
+setTimeout(mettreAJourPanierAffichage, 500); 
+
+function ajouterAuPanier(titre, prix) {
+    panier.push({ titre: titre, prix: parseFloat(prix) });
+    sauvegarderPanier();
+    mettreAJourPanierAffichage();
+    alert("Article ajouté au panier !");
+}
+
+function toggleCart() {
+    const modal = document.getElementById('cart-modal');
+    // Bascule entre caché (none) et visible (block)
+    modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'block' : 'none';
+}
+
+function mettreAJourPanierAffichage() {
+    const liste = document.getElementById('cart-items');
+    const totalSpan = document.getElementById('cart-total');
+    const btnMain = document.getElementById('cart-btn');
+    
+    // Si les éléments HTML n'existent pas encore (page admin), on arrête
+    if(!liste) return;
+
+    liste.innerHTML = "";
+    let total = 0;
+
+    panier.forEach((item, index) => {
+        total += item.prix;
+        liste.innerHTML += `
+            <li style="margin-bottom: 10px; border-bottom: 1px solid #eee;">
+                ${item.titre} (${item.prix}€) 
+                <button onclick="retirerDuPanier(${index})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">X</button>
+            </li>`;
+    });
+
+    // On arrondit le total à 2 chiffres après la virgule
+    totalSpan.innerText = total.toFixed(2);
+    btnMain.innerText = `Panier (${panier.length})`;
+}
+
+function retirerDuPanier(index) {
+    panier.splice(index, 1);
+    sauvegarderPanier();
+    mettreAJourPanierAffichage();
+}
+
+function viderPanier() {
+    panier = [];
+    sauvegarderPanier();
+    mettreAJourPanierAffichage();
+}
+
+function sauvegarderPanier() {
+    localStorage.setItem('monPanier', JSON.stringify(panier));
+}
+
+function payerPanier() {
+    if(panier.length === 0) {
+        alert("Votre panier est vide !");
+        return;
+    }
+
+    // ⚠️ REMETS TON EMAIL PAYPAL ICI
+    const emailPayPal = "ton-email-paypal@gmail.com"; 
+    
+    let total = 0;
+    panier.forEach(p => total += p.prix);
+    
+    const nomCommande = `Commande de ${panier.length} articles (Atelier)`;
+
+    if(confirm(`Payer un total de ${total}€ via PayPal ?`)) {
+        const url = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${emailPayPal}&currency_code=EUR&amount=${total}&item_name=${encodeURIComponent(nomCommande)}`;
+        window.open(url, '_blank');
+    }
+}
