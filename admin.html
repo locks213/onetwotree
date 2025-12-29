@@ -102,65 +102,77 @@
 
     <script src="script.js"></script>
 
-    <script>
-        // --- 1. CONFIGURATION IMMEDIATE POUR L'ADMIN ---
-        const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; // Votre clé publique
+<script src="script.js"></script>
+
+<script>
+    // --- CONFIGURATION ---
+    const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; 
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // On crée la connexion ici pour être sûr qu'elle existe pour l'admin
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // METS TON EMAIL ICI
+    const ADMIN_EMAIL = 'ton-email-admin@gmail.com'; 
 
-        // --- 2. FONCTIONS DE LA PAGE ---
-
-        // Fonction de connexion
-        async function loginAdmin(event) {
-            event.preventDefault(); 
+    // --- 1. GESTION DU LOGIN ---
+    async function loginAdmin(event) {
+        event.preventDefault(); 
             
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
-            const msgDiv = document.getElementById('login-msg');
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+        const msgDiv = document.getElementById('login-msg');
 
-            msgDiv.innerText = "Connexion en cours...";
+        msgDiv.innerText = "Connexion en cours...";
 
-            const { data, error } = await supabase.auth.signInWithPassword({ 
-                email: email, 
-                password: password 
-            });
-
-            if (error) {
-                msgDiv.innerText = "Erreur : " + error.message;
-                console.error(error);
-            } else {
-                msgDiv.innerText = "";
-                location.reload(); // Recharger pour afficher le dashboard
-            }
+        // Vérification simple : Si l'email n'est pas celui de l'admin, on bloque tout de suite
+        if (email !== ADMIN_EMAIL) {
+            msgDiv.innerText = "Accès refusé : Vous n'êtes pas l'administrateur.";
+            return;
         }
 
-        // Vérification au chargement de la page
-        window.addEventListener('load', async () => {
-            // On vérifie directement la session
-            const { data: { session } } = await supabase.auth.getSession();
-
-            if (session) {
-                // Si connecté : Cacher Login, Montrer Dashboard
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
-                
-                // On charge la liste (cette fonction vient de script.js, espérons qu'elle soit chargée)
-                // Si elle ne marche pas, on la refera ici.
-                if(typeof chargerListeAdmin === 'function') {
-                    chargerListeAdmin();
-                } else {
-                    console.log("Fonction chargerListeAdmin pas encore prête, rechargement...");
-                    // Petite astuce si script.js est lent à charger
-                    setTimeout(() => { if(typeof chargerListeAdmin === 'function') chargerListeAdmin(); }, 1000);
-                }
-            } else {
-                // Si pas connecté : Montrer Login
-                document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('dashboard-section').classList.add('hidden');
-            }
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+            email: email, 
+            password: password 
         });
-    </script>
+
+        if (error) {
+            msgDiv.innerText = "Erreur : " + error.message;
+        } else {
+            msgDiv.innerText = "Connexion réussie !";
+            location.reload(); 
+        }
+    }
+
+    // --- 2. VÉRIFICATION AU CHARGEMENT ---
+    window.addEventListener('load', async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // On vérifie si connecté ET si c'est bien l'admin
+        if (session && session.user.email === ADMIN_EMAIL) {
+                
+            // 1. Cacher le login / Afficher le dashboard
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+                
+            // 2. Charger la liste des produits
+            // On attend un peu que script.js soit prêt si besoin
+            if(typeof chargerListeAdmin === 'function') {
+                chargerListeAdmin();
+            } else {
+                setTimeout(() => { if(typeof chargerListeAdmin === 'function') chargerListeAdmin(); }, 500);
+            }
+
+        } else {
+            // Si pas connecté ou mauvais utilisateur
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+                
+            // Si quelqu'un est connecté mais n'est pas admin, on le déconnecte par sécurité
+            if (session && session.user.email !== ADMIN_EMAIL) {
+                console.log("Utilisateur non-admin détecté sur la page admin. Déconnexion...");
+                await supabase.auth.signOut();
+            }
+        }
+    });
+</script>
 </body>
-</html>
+</html>    
