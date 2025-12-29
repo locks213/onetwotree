@@ -27,9 +27,11 @@
 
     <div id="login-section" class="admin-container">
         <h2>Espace Artisan</h2>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="login()">Se connecter</button>
+        <form id="login-form" onsubmit="login(); return false;">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Mot de passe">
+            <button type="submit">Se connecter</button>
+        </form>
         <p id="login-msg" style="color:red; margin-top:10px;"></p>
     </div>
 

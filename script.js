@@ -3,9 +3,12 @@
 const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
 
 // Remplace par ta nouvelle clé (sb_publishable_...)
-const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; 
+const SUPABASE_KEY = "sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ"; 
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Le bundle supabase charge un objet global `supabase` (lib).
+// Ne pas ré-déclarer `supabase` pour éviter l'erreur "already been declared".
+// On crée le client sous un autre nom local `supabaseClient`.
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 // --- 2. FONCTIONS PAGE D'ACCUEIL (VITRINE) ---
@@ -16,7 +19,7 @@ async function chargerVitrine() {
     if (!container) return; 
 
     // Récupérer les produits depuis Supabase
-    const { data: produits, error } = await supabase.from('produits').select('*');
+    const { data: produits, error } = await supabaseClient.from('produits').select('*');
 
     if (error) {
         console.error("Erreur chargement", error);
@@ -50,7 +53,7 @@ function acheter(titre, prix) {
 }
 
 async function logVisitor() {
-    await supabase.from('visiteurs').insert([{ page_viewed: 'Accueil', timestamp: new Date() }]);
+    await supabaseClient.from('visiteurs').insert([{ page_viewed: 'Accueil', timestamp: new Date() }]);
 }
 
 
@@ -60,7 +63,7 @@ async function login() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
     
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email, password: pass });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: pass });
 
     if (error) {
         document.getElementById('login-msg').innerText = "Erreur : " + error.message;
@@ -72,7 +75,7 @@ async function login() {
 }
 
 async function logout() {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     location.reload();
 }
 
@@ -82,7 +85,7 @@ async function ajouterProduit() {
     const img = document.getElementById('new-image').value;
     const cat = document.getElementById('new-cat').value;
 
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('produits')
         .insert([{ titre: titre, prix: prix, image_file: img, categorie: cat }]);
 
@@ -96,7 +99,7 @@ async function ajouterProduit() {
 
 async function chargerListeAdmin() {
     const listDiv = document.getElementById('admin-product-list');
-    const { data: produits } = await supabase.from('produits').select('*');
+    const { data: produits } = await supabaseClient.from('produits').select('*');
     
     listDiv.innerHTML = "";
     produits.forEach(prod => {
@@ -111,7 +114,7 @@ async function chargerListeAdmin() {
 
 async function supprimerProduit(id) {
     if(confirm("Vraiment supprimer ?")) {
-        await supabase.from('produits').delete().eq('id', id);
+        await supabaseClient.from('produits').delete().eq('id', id);
         chargerListeAdmin();
     }
 }
@@ -128,7 +131,7 @@ window.onload = function() {
     // Si on est sur l'admin
     if(document.getElementById('dashboard-section')) {
         // Vérifier si déjà connecté
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('dashboard-section').classList.remove('hidden');
