@@ -1,47 +1,139 @@
-// CONFIGURATION SUPABASE
-// Remplace ces valeurs par celles de ton projet Supabase
+// --- 1. CONFIGURATION ---
+// Remplace par ton URL (celle qui finit par .supabase.co)
 const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
-const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ';
+
+// Remplace par ta nouvelle clé (sb_publishable_...)
+const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; 
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// FONCTION : LOGGER LE VISITEUR
-async function logVisitor() {
-    console.log("Tentative de log visiteur...");
-    const { data, error } = await supabase
-        .from('visiteurs')
-        .insert([
-            { 
-                page_viewed: 'Accueil',
-                user_agent: navigator.userAgent, // Info technique sur le navigateur
-                timestamp: new Date().toISOString()
-            },
-        ]);
 
-    if (error) console.error('Erreur Supabase:', error);
-    else console.log('Visiteur loggué avec succès');
+// --- 2. FONCTIONS PAGE D'ACCUEIL (VITRINE) ---
+
+async function chargerVitrine() {
+    const container = document.getElementById('gallery-container');
+    // Sécurité : si on n'est pas sur la page d'accueil, on arrête
+    if (!container) return; 
+
+    // Récupérer les produits depuis Supabase
+    const { data: produits, error } = await supabase.from('produits').select('*');
+
+    if (error) {
+        console.error("Erreur chargement", error);
+        container.innerHTML = "<p>Impossible de charger la vitrine. Vérifiez la console.</p>";
+    } else if (produits.length === 0) {
+        container.innerHTML = "<p>Aucun produit en vente pour le moment.</p>";
+    } else {
+        container.innerHTML = ""; // Vider le texte "Chargement..."
+        produits.forEach(prod => {
+            // Création de la carte HTML
+            const card = document.createElement('div');
+            card.className = 'card';
+            // Gestion de l'image (si pas d'image, on met un gris)
+            const imageSrc = prod.image_file ? prod.image_file : 'https://via.placeholder.com/300?text=Pas+d+image';
+            
+            card.innerHTML = `
+                <img src="${imageSrc}" alt="${prod.titre}" style="width:100%; height:200px; object-fit:cover;">
+                <h3>${prod.titre}</h3>
+                <p>${prod.prix} €</p>
+                <button onclick="acheter('${prod.titre}', ${prod.prix})">Acheter</button>
+            `;
+            container.appendChild(card);
+        });
+    }
+    
+    logVisitor();
 }
 
-// Lancer le log au chargement de la page
-window.onload = function() {
-    logVisitor();
+function acheter(titre, prix) {
+    alert(`Bientôt disponible : Achat de ${titre} (${prix}€)`);
+}
+
+async function logVisitor() {
+    await supabase.from('visiteurs').insert([{ page_viewed: 'Accueil', timestamp: new Date() }]);
+}
+
+
+// --- 3. FONCTIONS ADMIN ---
+
+async function login() {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
     
-    // Initialisation Bouton PayPal (Exemple pour l'article 1)
-    if(document.getElementById('paypal-button-container-1')){
-        paypal.Buttons({
-            createOrder: function(data, actions) {
-                return actions.order.create({
-                    purchase_units: [{
-                        amount: { value: '45.00' } // PRIX DE L'ARTICLE
-                    }]
-                });
-            },
-            onApprove: function(data, actions) {
-                return actions.order.capture().then(function(details) {
-                    alert('Transaction validée par ' + details.payer.name.given_name);
-                    // Ici on pourrait logger la vente dans Supabase
-                });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email, password: pass });
+
+    if (error) {
+        document.getElementById('login-msg').innerText = "Erreur : " + error.message;
+    } else {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        chargerListeAdmin();
+    }
+}
+
+async function logout() {
+    await supabase.auth.signOut();
+    location.reload();
+}
+
+async function ajouterProduit() {
+    const titre = document.getElementById('new-titre').value;
+    const prix = document.getElementById('new-prix').value;
+    const img = document.getElementById('new-image').value;
+    const cat = document.getElementById('new-cat').value;
+
+    const { error } = await supabase
+        .from('produits')
+        .insert([{ titre: titre, prix: prix, image_file: img, categorie: cat }]);
+
+    if (error) alert('Erreur ajout: ' + error.message);
+    else {
+        alert('Produit ajouté !');
+        chargerListeAdmin();
+        document.getElementById('new-titre').value = ''; // Reset champ
+    }
+}
+
+async function chargerListeAdmin() {
+    const listDiv = document.getElementById('admin-product-list');
+    const { data: produits } = await supabase.from('produits').select('*');
+    
+    listDiv.innerHTML = "";
+    produits.forEach(prod => {
+        listDiv.innerHTML += `
+            <div class="product-list-item">
+                <span>${prod.titre} (${prod.prix}€)</span>
+                <span class="delete-btn" onclick="supprimerProduit(${prod.id})"> [X] Supprimer</span>
+            </div>
+        `;
+    });
+}
+
+async function supprimerProduit(id) {
+    if(confirm("Vraiment supprimer ?")) {
+        await supabase.from('produits').delete().eq('id', id);
+        chargerListeAdmin();
+    }
+}
+
+
+// --- 4. DÉMARRAGE ---
+
+window.onload = function() {
+    // Si on est sur l'accueil
+    if(document.getElementById('gallery-container')) {
+        chargerVitrine();
+    }
+    
+    // Si on est sur l'admin
+    if(document.getElementById('dashboard-section')) {
+        // Vérifier si déjà connecté
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                chargerListeAdmin();
             }
-        }).render('#paypal-button-container-1');
+        });
     }
 };
