@@ -49,7 +49,23 @@ async function chargerVitrine() {
 }
 
 function acheter(titre, prix) {
-    alert(`Bientôt disponible : Achat de ${titre} (${prix}€)`);
+    // ⚠️ REMPLACE PAR TON ADRESSE PAYPAL (Celle de ton compte)
+    const emailPayPal = "ton-email-paypal@gmail.com"; 
+    
+    // On demande confirmation à l'utilisateur
+    if(confirm(`Voulez-vous être redirigé vers PayPal pour acheter "${titre}" à ${prix}€ ?`)) {
+        
+        // On construit le lien de paiement sécurisé
+        // cmd=_xclick : bouton acheter classique
+        // business : ton email pour recevoir l'argent
+        // amount : le prix
+        // item_name : le nom du produit
+        // currency_code : en Euros
+        const url = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${emailPayPal}&currency_code=EUR&amount=${prix}&item_name=${encodeURIComponent(titre)}`;
+        
+        // On ouvre PayPal dans un nouvel onglet
+        window.open(url, '_blank');
+    }
 }
 
 async function logVisitor() {
