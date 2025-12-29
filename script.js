@@ -243,3 +243,110 @@ function payerPanier() {
         window.open(url, '_blank');
     }
 }
+// --- GESTION COMPTE CLIENT (AUTH) ---
+
+let modeInscription = false; // Par défaut, on est en mode "Connexion"
+
+// 1. Ouvrir/Fermer la fenêtre
+function toggleAuthModal() {
+    const modal = document.getElementById('auth-modal');
+    modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'block' : 'none';
+    
+    // On ferme les autres fenêtres pour pas que ça se chevauche
+    document.getElementById('cart-modal').style.display = 'none';
+    document.getElementById('orders-modal').style.display = 'none';
+}
+
+// 2. Basculer entre "Se connecter" et "Créer un compte"
+function basculerModeAuth() {
+    modeInscription = !modeInscription; // On inverse (Vrai -> Faux ou Faux -> Vrai)
+    
+    const title = document.getElementById('auth-title');
+    const btn = document.getElementById('auth-action-btn');
+    const toggleText = document.getElementById('auth-toggle-text');
+    
+    if (modeInscription) {
+        title.innerText = "Créer un compte";
+        btn.innerText = "M'inscrire";
+        toggleText.innerText = "Déjà un compte ?";
+    } else {
+        title.innerText = "Connexion";
+        btn.innerText = "Se connecter";
+        toggleText.innerText = "Pas encore de compte ?";
+    }
+}
+
+// 3. L'action principale (Le Clic)
+async function gererAuth() {
+    const email = document.getElementById('client-email').value;
+    const password = document.getElementById('client-password').value;
+
+    if (!email || !password) {
+        alert("Merci de remplir l'email et le mot de passe.");
+        return;
+    }
+
+    if (modeInscription) {
+        // --- INSCRIPTION ---
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            alert("Erreur inscription : " + error.message);
+        } else {
+            alert("Compte créé ! Vérifiez vos emails pour confirmer votre inscription.");
+            toggleAuthModal();
+        }
+
+    } else {
+        // --- CONNEXION ---
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            alert("Erreur connexion : " + error.message);
+        } else {
+            // La page va se recharger ou l'état va changer automatiquement
+            alert("Vous êtes connecté !");
+            toggleAuthModal();
+            verificationSession(); // On met à jour le menu
+        }
+    }
+}
+
+// 4. Se déconnecter
+async function logoutClient() {
+    await supabase.auth.signOut();
+    alert("Vous êtes déconnecté.");
+    verificationSession(); // On remet le menu à zéro
+    // Optionnel : on vide le panier ou on recharge la page
+    location.reload();
+}
+
+// 5. Vérifier qui est là (Mise à jour du menu)
+async function verificationSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const loginLink = document.getElementById('login-btn-text');
+    const logoutLink = document.getElementById('logout-btn');
+    const mainLink = document.getElementById('auth-link');
+
+    if (session) {
+        // Si connecté
+        mainLink.innerText = "Mon Compte (Connecté)";
+        loginLink.style.display = 'none'; // On cache le bouton connexion
+        logoutLink.style.display = 'block'; // On affiche déconnexion
+    } else {
+        // Si visiteur
+        mainLink.innerText = "Mon Espace";
+        loginLink.style.display = 'block';
+        logoutLink.style.display = 'none';
+    }
+}
+
+// On lance la vérification au chargement de la page
+verificationSession();

@@ -40,9 +40,9 @@
                 </div>
             </li>
                         <li class="dropdown">
-                <a href="#">Panier</a>
+                <a href="#">Commande</a>
                 <div class="dropdown-content">
-                    <a href="#">Consulter mon panier</a>
+                    <a href="#">Mes commandes</a>
             </li>
             <li class="dropdown">
                 <a href="#">Se connecter</a>
@@ -51,6 +51,35 @@
                     <a href="admin.html" style="font-size:0.8em; color:gray;">Admin</a>
                 </div>
             </li>
+            <li class="dropdown">
+    <a href="#" id="auth-link">Mon Espace</a>
+    <div class="dropdown-content">
+        <a href="#" onclick="toggleOrders()">Mes commandes</a>
+        <a href="#" onclick="toggleAuthModal()" id="login-btn-text">Se connecter / S'inscrire</a>
+        <a href="#" onclick="logoutClient()" id="logout-btn" style="display:none; color:red;">Se déconnecter</a>
+    </div>
+</li>
+
+<div id="auth-modal" style="display: none; position: fixed; top: 70px; right: 20px; width: 300px; background: white; border: 2px solid #333; padding: 20px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-radius: 8px;">
+    
+    <h3 id="auth-title" style="text-align:center; margin-top:0;">Connexion</h3>
+    
+    <input type="email" id="client-email" placeholder="Votre Email" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing:border-box;">
+    <input type="password" id="client-password" placeholder="Mot de passe" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing:border-box;">
+
+    <button onclick="gererAuth()" id="auth-action-btn" style="width: 100%; background: #333; color: white; padding: 10px; border: none; cursor: pointer;">
+        Se connecter
+    </button>
+
+    <hr>
+    
+    <p style="text-align:center; font-size:0.9em;">
+        <span id="auth-toggle-text">Pas encore de compte ?</span>
+        <a href="#" onclick="basculerModeAuth()" style="color: blue; text-decoration: underline;">Créer un compte</a>
+    </p>
+
+    <button onclick="toggleAuthModal()" style="width: 100%; background: #eee; color: #333; padding: 5px; border: none; cursor: pointer; margin-top: 10px;">Fermer</button>
+</div>
         </ul>
     </nav>
 
