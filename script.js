@@ -3,9 +3,9 @@ const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; 
 
 // Initialisation de Supabase (Vérification de sécurité)
-let supabase;
+let supabaseClient;
 if (window.supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
     console.error("Supabase SDK non chargé. Vérifiez le <head> de votre HTML.");
 }
@@ -196,14 +196,14 @@ async function gererAuth() {
     }
 
     if (modeInscription) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) alert("Erreur : " + error.message);
         else {
             alert("Compte créé ! Vérifiez vos emails pour confirmer.");
             toggleAuthModal();
         }
     } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) alert("Erreur : " + error.message);
         else {
             // alert("Connecté !"); // Optionnel, parfois intrusif
@@ -214,16 +214,16 @@ async function gererAuth() {
 }
 
 async function logoutClient() {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     alert("Vous avez été déconnecté.");
     verificationSession();
     location.reload();
 }
 
 async function verificationSession() {
-    if(!supabase) return;
+    if(!supabaseClient) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     
     const loginLink = document.getElementById('login-btn-text');
     const logoutLink = document.getElementById('logout-btn');
@@ -249,7 +249,7 @@ async function chargerVitrine() {
     if (!container) return; 
 
     // Sélectionne les colonnes nécessaires
-    const { data: produits, error } = await supabase.from('produits').select('*');
+    const { data: produits, error } = await supabaseClient.from('produits').select('*');
 
     if (error) {
         console.error(error);
@@ -284,7 +284,7 @@ async function chargerListeAdmin() {
     const listDiv = document.getElementById('admin-product-list');
     if(!listDiv) return;
 
-    const { data: produits } = await supabase.from('produits').select('*').order('id', { ascending: false });
+    const { data: produits } = await supabaseClient.from('produits').select('*').order('id', { ascending: false });
     
     listDiv.innerHTML = "";
     produits.forEach(prod => {
@@ -303,7 +303,7 @@ async function ajouterProduit() {
 
     if(!titreInput || !prixInput) return;
 
-    const { error } = await supabase.from('produits').insert([{ 
+    const { error } = await supabaseClient.from('produits').insert([{ 
         titre: titreInput.value, 
         prix: parseFloat(prixInput.value), 
         image_file: imgInput.value 
@@ -320,7 +320,7 @@ async function ajouterProduit() {
 
 async function supprimerProduit(id) {
     if(confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
-        const { error } = await supabase.from('produits').delete().eq('id', id);
+        const { error } = await supabaseClient.from('produits').delete().eq('id', id);
         if(error) alert("Erreur suppression: " + error.message);
         else chargerListeAdmin();
     }
@@ -341,7 +341,7 @@ window.onload = function() {
     // 4. Lancement Admin (si sur page admin)
     if(document.getElementById('admin-product-list')) {
         // On vérifie si l'admin est connecté
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 chargerListeAdmin();
             } else {
