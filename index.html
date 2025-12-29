@@ -60,14 +60,34 @@
     Panier (0)
 </button>
 
-<div id="cart-modal" style="display: none; position: fixed; top: 70px; right: 20px; width: 300px; background: white; border: 2px solid #333; padding: 20px; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-    <h3>Votre Panier</h3>
-    <ul id="cart-items" style="list-style: none; padding: 0;">
-        </ul>
-    <hr>
-    <p><strong>Total : <span id="cart-total">0</span> €</strong></p>
-    <button onclick="payerPanier()" style="width: 100%; background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">Payer tout</button>
-    <button onclick="viderPanier()" style="width: 100%; background: #f44336; color: white; padding: 5px; border: none; cursor: pointer; margin-top: 10px;">Vider</button>
+<div id="cart-modal" style="display: none; position: fixed; top: 70px; right: 20px; width: 320px; background: white; border: 2px solid #333; padding: 20px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-radius: 8px;">
+    
+    <h3 style="margin-top:0; text-align:center;">Récapitulatif</h3>
+    
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #eee;">
+                <th style="text-align: left; padding: 5px;">Article</th>
+                <th style="text-align: right; padding: 5px;">Prix</th>
+                <th style="width: 20px;"></th> </tr>
+        </thead>
+        <tbody id="cart-items">
+            </tbody>
+    </table>
+
+    <hr style="border: 0; border-top: 1px solid #eee;">
+    
+    <p style="text-align: right; font-size: 1.2em;">
+        Total à payer : <strong><span id="cart-total">0</span> €</strong>
+    </p>
+
+    <button onclick="payerPanier()" style="width: 100%; background: #333; color: white; padding: 12px; border: none; cursor: pointer; font-size: 1em; border-radius: 4px;">
+        Valider et Payer via PayPal
+    </button>
+    
+    <button onclick="viderPanier()" style="background: none; border: none; color: #777; font-size: 0.8em; width: 100%; margin-top: 10px; cursor: pointer; text-decoration: underline;">
+        Tout vider
+    </button>
 </div>
         <p class="intro-text">Découvrez nos créations uniques, faites main.</p>
         

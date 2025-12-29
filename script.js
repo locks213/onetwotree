@@ -177,27 +177,34 @@ function toggleCart() {
 }
 
 function mettreAJourPanierAffichage() {
-    const liste = document.getElementById('cart-items');
+    const tbody = document.getElementById('cart-items'); // On cible le corps du tableau
     const totalSpan = document.getElementById('cart-total');
     const btnMain = document.getElementById('cart-btn');
     
-    // Si les éléments HTML n'existent pas encore (page admin), on arrête
-    if(!liste) return;
+    // Si on est sur l'admin et que le panier n'existe pas, on arrête
+    if(!tbody) return;
 
-    liste.innerHTML = "";
+    tbody.innerHTML = ""; // On vide le tableau
     let total = 0;
 
     panier.forEach((item, index) => {
         total += item.prix;
-        liste.innerHTML += `
-            <li style="margin-bottom: 10px; border-bottom: 1px solid #eee;">
-                ${item.titre} (${item.prix}€) 
-                <button onclick="retirerDuPanier(${index})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">X</button>
-            </li>`;
+        
+        // On crée une ligne de tableau (tr) pour chaque article
+        tbody.innerHTML += `
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 8px 5px;">${item.titre}</td>
+                <td style="padding: 8px 5px; text-align: right;">${item.prix}€</td>
+                <td style="padding: 8px 5px; text-align: right;">
+                    <button onclick="retirerDuPanier(${index})" style="color: #999; border: 1px solid #ddd; background: white; border-radius: 50%; width: 20px; height: 20px; line-height: 18px; padding: 0; cursor: pointer; font-size: 12px;">✕</button>
+                </td>
+            </tr>`;
     });
 
-    // On arrondit le total à 2 chiffres après la virgule
-    totalSpan.innerText = total.toFixed(2);
+    // Mise à jour du total
+    totalSpan.innerText = total.toFixed(2); // .toFixed(2) assure qu'on a bien "52.00" et pas "52"
+    
+    // Mise à jour du bouton principal en haut
     btnMain.innerText = `Panier (${panier.length})`;
 }
 
