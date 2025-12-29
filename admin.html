@@ -103,9 +103,18 @@
     <script src="script.js"></script>
 
     <script>
-        // Fonction de connexion spécifique à cette page Admin
+        // --- 1. CONFIGURATION IMMEDIATE POUR L'ADMIN ---
+        const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; // Votre clé publique
+        
+        // On crée la connexion ici pour être sûr qu'elle existe pour l'admin
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- 2. FONCTIONS DE LA PAGE ---
+
+        // Fonction de connexion
         async function loginAdmin(event) {
-            event.preventDefault(); // Empêche le rechargement de page
+            event.preventDefault(); 
             
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
@@ -113,7 +122,6 @@
 
             msgDiv.innerText = "Connexion en cours...";
 
-            // On utilise la variable 'supabase' qui est dans script.js
             const { data, error } = await supabase.auth.signInWithPassword({ 
                 email: email, 
                 password: password 
@@ -121,36 +129,37 @@
 
             if (error) {
                 msgDiv.innerText = "Erreur : " + error.message;
+                console.error(error);
             } else {
                 msgDiv.innerText = "";
-                // On recharge la page pour que la vérification de session se fasse
-                location.reload();
+                location.reload(); // Recharger pour afficher le dashboard
             }
         }
 
         // Vérification au chargement de la page
         window.addEventListener('load', async () => {
-            // Attendre un tout petit peu que script.js initialise Supabase
-            setTimeout(async () => {
-                if(!supabase) return;
+            // On vérifie directement la session
+            const { data: { session } } = await supabase.auth.getSession();
 
-                const { data: { session } } = await supabase.auth.getSession();
-
-                if (session) {
-                    // Si connecté : Cacher Login, Montrer Dashboard
-                    document.getElementById('login-section').classList.add('hidden');
-                    document.getElementById('dashboard-section').classList.remove('hidden');
-                    
-                    // Charger la liste (fonction venant de script.js)
-                    if(typeof chargerListeAdmin === 'function') {
-                        chargerListeAdmin();
-                    }
+            if (session) {
+                // Si connecté : Cacher Login, Montrer Dashboard
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                
+                // On charge la liste (cette fonction vient de script.js, espérons qu'elle soit chargée)
+                // Si elle ne marche pas, on la refera ici.
+                if(typeof chargerListeAdmin === 'function') {
+                    chargerListeAdmin();
                 } else {
-                    // Si pas connecté : Montrer Login, Cacher Dashboard
-                    document.getElementById('login-section').classList.remove('hidden');
-                    document.getElementById('dashboard-section').classList.add('hidden');
+                    console.log("Fonction chargerListeAdmin pas encore prête, rechargement...");
+                    // Petite astuce si script.js est lent à charger
+                    setTimeout(() => { if(typeof chargerListeAdmin === 'function') chargerListeAdmin(); }, 1000);
                 }
-            }, 100);
+            } else {
+                // Si pas connecté : Montrer Login
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('dashboard-section').classList.add('hidden');
+            }
         });
     </script>
 </body>
