@@ -5,8 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>L'Atelier de l'Artisan</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR"></script>
+
+    <style>
+        /* Styles pour les fenêtres modales (Panier et Connexion) */
+        .modal {
+            display: none; 
+            position: fixed; 
+            top: 70px; 
+            right: 20px; 
+            background: white; 
+            border: 2px solid #333; 
+            padding: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            border-radius: 8px;
+        }
+
+        #cart-modal { width: 320px; z-index: 1000; }
+        #auth-modal { width: 300px; z-index: 2000; }
+
+        /* Bouton Panier flottant */
+        #cart-btn {
+            position: fixed; top: 20px; right: 20px; z-index: 1000;
+            padding: 10px 20px; background: #333; color: white;
+            border: none; border-radius: 5px; cursor: pointer;
+        }
+
+        /* Tables et formulaires */
+        .cart-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .cart-table th { text-align: left; border-bottom: 2px solid #eee; padding: 5px; }
+        .cart-table td { padding: 5px; }
+        
+        .auth-input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        
+        .btn-primary { width: 100%; background: #333; color: white; padding: 12px; border: none; cursor: pointer; border-radius: 4px; }
+        .btn-secondary { background: none; border: none; color: #777; font-size: 0.8em; width: 100%; margin-top: 10px; cursor: pointer; text-decoration: underline; }
+    </style>
 </head>
 <body>
 
@@ -23,6 +59,7 @@
                     <a href="#">Tout le catalogue</a>
                 </div>
             </li>
+
             <li class="dropdown">
                 <a href="#">Objets personnalisables</a>
                 <div class="dropdown-content">
@@ -31,74 +68,66 @@
                     <a href="#">Calendriers</a>
                     <a href="#">À la demande</a>
                 </div>
+            </li>
+
             <li class="dropdown">
                 <a href="#">À Propos</a>
                 <div class="dropdown-content">
                     <a href="#">L'Artisan</a>
                     <a href="#">Nous contacter</a>
-                    <a href="admin.html" style="font-size:0.8em; color:gray;">Admin</a>
                 </div>
             </li>
-                        <li class="dropdown">
-                <a href="#">Commande</a>
-                <div class="dropdown-content">
-                    <a href="#">Mes commandes</a>
-            </li>
+
             <li class="dropdown">
-                <a href="#">Se connecter</a>
+                <a href="#" id="auth-link">Mon Espace</a>
                 <div class="dropdown-content">
-                    <a href="#">Utilisateurs</a>
-                    <a href="admin.html" style="font-size:0.8em; color:gray;">Admin</a>
+                    <a href="#" onclick="toggleAuthModal()" id="login-btn-text">Se connecter / S'inscrire</a>
+                    
+                    <a href="#" onclick="toggleOrders()">Mes commandes</a>
+                    <a href="admin.html" style="font-size:0.8em; color:gray;">Admin (Accès restreint)</a>
+                    <a href="#" onclick="logoutClient()" id="logout-btn" style="display:none; color:red;">Se déconnecter</a>
                 </div>
             </li>
-            <li class="dropdown">
-    <a href="#" id="auth-link">Mon Espace</a>
-    <div class="dropdown-content">
-        <a href="#" onclick="toggleOrders()">Mes commandes</a>
-        <a href="#" onclick="toggleAuthModal()" id="login-btn-text">Se connecter / S'inscrire</a>
-        <a href="#" onclick="logoutClient()" id="logout-btn" style="display:none; color:red;">Se déconnecter</a>
-    </div>
-</li>
-
-
         </ul>
     </nav>
 
     <main class="showcase">
         <h1>Bienvenue à l'Atelier</h1>
-        <button id="cart-btn" onclick="toggleCart()" style="position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">
-    Panier (0)
-</button>
+        
+        <button id="cart-btn" onclick="toggleCart()">
+            Panier (<span id="cart-count">0</span>)
+        </button>
 
-<div id="cart-modal" style="display: none; position: fixed; top: 70px; right: 20px; width: 320px; background: white; border: 2px solid #333; padding: 20px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-radius: 8px;">
-    
-    <h3 style="margin-top:0; text-align:center;">Récapitulatif</h3>
-    
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-        <thead>
-            <tr style="border-bottom: 2px solid #eee;">
-                <th style="text-align: left; padding: 5px;">Article</th>
-                <th style="text-align: right; padding: 5px;">Prix</th>
-                <th style="width: 20px;"></th> </tr>
-        </thead>
-        <tbody id="cart-items">
-            </tbody>
-    </table>
+        <div id="cart-modal" class="modal">
+            <h3 style="margin-top:0; text-align:center;">Récapitulatif</h3>
+            
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th style="text-align: right;">Prix</th>
+                        <th style="width: 20px;"></th> 
+                    </tr>
+                </thead>
+                <tbody id="cart-items">
+                    </tbody>
+            </table>
 
-    <hr style="border: 0; border-top: 1px solid #eee;">
-    
-    <p style="text-align: right; font-size: 1.2em;">
-        Total à payer : <strong><span id="cart-total">0</span> €</strong>
-    </p>
+            <hr style="border: 0; border-top: 1px solid #eee;">
+            
+            <p style="text-align: right; font-size: 1.2em;">
+                Total : <strong><span id="cart-total">0</span> €</strong>
+            </p>
 
-    <button onclick="payerPanier()" style="width: 100%; background: #333; color: white; padding: 12px; border: none; cursor: pointer; font-size: 1em; border-radius: 4px;">
-        Valider et Payer via PayPal
-    </button>
-    
-    <button onclick="viderPanier()" style="background: none; border: none; color: #777; font-size: 0.8em; width: 100%; margin-top: 10px; cursor: pointer; text-decoration: underline;">
-        Tout vider
-    </button>
-</div>
+            <button onclick="payerPanier()" class="btn-primary">
+                Valider et Payer via PayPal
+            </button>
+            
+            <button onclick="viderPanier()" class="btn-secondary">
+                Tout vider
+            </button>
+        </div>
+
         <p class="intro-text">Découvrez nos créations uniques, faites main.</p>
         
         <div class="gallery-grid" id="gallery-container">
@@ -109,26 +138,34 @@
     <div class="fixed-logo">
         <img src="img/logo.jpg" alt="Logo Atelier">
     </div>
-<div id="auth-modal" style="display: none; position: fixed; top: 70px; right: 20px; width: 300px; background: white; border: 2px solid #333; padding: 20px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-radius: 8px;">
-    
-    <h3 id="auth-title" style="text-align:center; margin-top:0;">Connexion</h3>
-    
-    <input type="email" id="client-email" placeholder="Votre Email" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing:border-box;">
-    <input type="password" id="client-password" placeholder="Mot de passe" style="width: 100%; padding: 10px; margin-bottom: 10px; box-sizing:border-box;">
 
-    <button onclick="gererAuth()" id="auth-action-btn" style="width: 100%; background: #333; color: white; padding: 10px; border: none; cursor: pointer;">
-        Se connecter
-    </button>
+    <div id="auth-modal" class="modal">
+        <h3 id="auth-title" style="text-align:center; margin-top:0;">Connexion</h3>
+        
+        <input type="email" id="client-email" class="auth-input" placeholder="Votre Email">
+        <input type="password" id="client-password" class="auth-input" placeholder="Mot de passe">
 
-    <hr>
+        <button onclick="gererAuth()" id="auth-action-btn" class="btn-primary" style="padding:10px;">
+            Se connecter
+        </button>
+
+        <hr>
+        
+        <p style="text-align:center; font-size:0.9em;">
+            <span id="auth-toggle-text">Pas encore de compte ?</span>
+            <a href="#" onclick="basculerModeAuth()" style="color: blue; text-decoration: underline;">Créer un compte</a>
+        </p>
+
+        <button onclick="toggleAuthModal()" style="width: 100%; background: #eee; color: #333; padding: 5px; border: none; cursor: pointer; margin-top: 10px;">Fermer</button>
+    </div>
+    <div id="orders-modal" class="modal" style="width: 350px; z-index: 2000;">
+    <h3 style="text-align:center; margin-top:0;">Mes Commandes</h3>
     
-    <p style="text-align:center; font-size:0.9em;">
-        <span id="auth-toggle-text">Pas encore de compte ?</span>
-        <a href="#" onclick="basculerModeAuth()" style="color: blue; text-decoration: underline;">Créer un compte</a>
-    </p>
+    <div id="orders-list" style="max-height: 300px; overflow-y: auto;">
+        </div>
 
-    <button onclick="toggleAuthModal()" style="width: 100%; background: #eee; color: #333; padding: 5px; border: none; cursor: pointer; margin-top: 10px;">Fermer</button>
-</div>
+    <button onclick="toggleOrders()" style="width: 100%; background: #eee; color: #333; padding: 5px; border: none; cursor: pointer; margin-top: 10px;">Fermer</button>
+    </div>
 
     <script src="script.js"></script>
 </body>
