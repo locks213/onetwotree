@@ -74,19 +74,39 @@
         <button id="cart-btn" onclick="toggleCart()">
             Panier (<span id="cart-count">0</span>)
         </button>
+<div class="themes-navigation">
+    
+    <div class="theme-card" onclick="chargerVitrine('Tout')">
+        <img src="img/atelier-bureau.jpg" alt="Tout l'atelier"> 
+        <div class="theme-title">Tout l'Atelier</div>
+    </div>
 
-        <div class="filter-container">
-            <label for="theme-select" style="font-weight:bold; margin-right:10px;">Je recherche :</label>
-            
-            <select id="theme-select" onchange="chargerVitrine(this.value)">
-                <option value="Tout">-- Tout voir --</option>
-                <option value="Découpe Laser">Découpe Laser</option>
-                <option value="Céramique">Céramique</option>
-                <option value="Bois">Travail du Bois</option>
-                <option value="Textile">Textile</option>
-                <option value="Papeterie">Papeterie</option>
-            </select>
-        </div>
+    <div class="theme-card" onclick="chargerVitrine('Découpe Laser')">
+        <img src="img/laser-exemple.jpg" alt="Découpe Laser">
+        <div class="theme-title">Découpe Laser</div>
+    </div>
+
+    <div class="theme-card" onclick="chargerVitrine('Céramique')">
+        <img src="img/ceramique-exemple.jpg" alt="Céramique">
+        <div class="theme-title">Céramique</div>
+    </div>
+
+    <div class="theme-card" onclick="chargerVitrine('Bois')">
+        <img src="img/bois-exemple.jpg" alt="Travail du Bois">
+        <div class="theme-title">Bois</div>
+    </div>
+
+    <div class="theme-card" onclick="chargerVitrine('Textile')">
+        <img src="img/textile-exemple.jpg" alt="Textile">
+        <div class="theme-title">Textile</div>
+    </div>
+
+</div>
+
+<div class="gallery-grid" id="gallery-container">
+    <p style="text-align:center; width:100%;">Cliquez sur un thème ci-dessus pour découvrir nos créations.</p>
+</div>
+
 
         <div class="gallery-grid" id="gallery-container">
             <p>Chargement des collections...</p>

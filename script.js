@@ -310,30 +310,53 @@ async function verificationSession() {
 
 
 // --- 5. FONCTIONS VITRINE (ACCUEIL) ---
-async function chargerVitrine() {
+async function chargerVitrine(filtre = "Tout") {
+    console.log("--- CHARGEMENT VITRINE ---");
+    console.log("Filtre demandé :", filtre);
+
     const container = document.getElementById('gallery-container');
     if (!container) return; 
 
-    // Sélectionne les colonnes nécessaires
-    const { data: produits, error } = await supabaseClient.from('produits').select('*');
+    // Petit message de chargement pour que l'utilisateur sache qu'il se passe quelque chose
+    container.innerHTML = "<p style='text-align:center; width:100%;'>Recherche en cours...</p>";
+
+    // 1. On prépare la requête de base (tout sélectionner)
+    let query = supabaseClient.from('produits').select('*');
+
+    // 2. Si un filtre spécifique est choisi (autre que "Tout"), on filtre
+    if (filtre !== "Tout") {
+        // IMPORTANT : Le mot doit être EXACTEMENT le même que dans ta base de données
+        query = query.eq('categorie', filtre);
+    }
+
+    // 3. On lance la requête
+    const { data: produits, error } = await query;
 
     if (error) {
-        console.error(error);
+        console.error("Erreur Supabase :", error);
         container.innerHTML = "<p>Impossible de charger la vitrine pour le moment.</p>";
     } else {
         container.innerHTML = "";
+        
+        console.log("Produits trouvés :", produits.length);
+
+        if (produits.length === 0) {
+            container.innerHTML = `<p style='text-align:center; width:100%;'>Aucune création trouvée pour le thème : <strong>${filtre}</strong></p>`;
+            return;
+        }
+
         produits.forEach(prod => {
-            const imageSrc = prod.image_file ? prod.image_file : 'img/default.jpg'; // Image par défaut si vide
+            const imageSrc = prod.image_file ? prod.image_file : 'img/default.jpg'; 
             
-            // Création sécurisée des éléments DOM
             const card = document.createElement('div');
-            card.className = 'card'; // Assurez-vous d'avoir du CSS pour .card
+            card.className = 'card';
             card.innerHTML = `
                 <div style="height: 200px; overflow: hidden; background: white; border-bottom: 1px solid #eee;">
                     <img src="${imageSrc}" alt="${prod.titre}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.3s;" 
                     onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 </div>
                 <h3 style="margin: 10px 0;">${prod.titre}</h3>
+                <p style="font-size: 0.8em; color: #777;">${prod.categorie || 'Non classé'}</p>
                 <p style="font-weight: bold; color: #555;">${prod.prix} €</p>
                 <button class="btn-primary" onclick="ajouterAuPanier('${prod.titre.replace(/'/g, "\\'")}', ${prod.prix})">Ajouter au panier</button>
             `;
@@ -374,12 +397,16 @@ async function ajouterProduit() {
     const prixInput = document.getElementById('new-prix');
     const imgInput = document.getElementById('new-image'); // URL de l'image
 
+    const catInput = document.getElementById('new-categorie'); // On récupère le menu
+    // -------------------------------
+
     if(!titreInput || !prixInput) return;
 
     const { error } = await supabaseClient.from('produits').insert([{ 
         titre: titreInput.value, 
         prix: parseFloat(prixInput.value), 
-        image_file: imgInput.value 
+        image_file: imgInput.value,
+        categorie: catInput.value, 
     }]);
 
     if (error) alert("Erreur : " + error.message);
@@ -387,6 +414,8 @@ async function ajouterProduit() {
         alert('Produit ajouté !'); 
         titreInput.value = ''; 
         prixInput.value = '';
+        imgInput.value = '';
+        catInput.value = 'Divers'; // On remet à zéro
         chargerListeAdmin(); 
     }
 }

@@ -83,10 +83,22 @@
 
         <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
             <h3 style="margin-top:0;">Ajouter une création</h3>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center;">
                 <input type="text" id="new-titre" placeholder="Titre (ex: Vase en céramique)" style="flex:2;">
+                
+                <select id="new-categorie" style="flex:1; padding: 12px; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="Divers">-- Catégorie --</option>
+                    <option value="Découpe Laser">Découpe Laser</option>
+                    <option value="Céramique">Céramique</option>
+                    <option value="Bois">Bois</option>
+                    <option value="Textile">Textile</option>
+                    <option value="Papeterie">Papeterie</option>
+                </select>
+
                 <input type="number" id="new-prix" placeholder="Prix (€)" style="flex:1;">
             </div>
+
             <input type="text" id="new-image" placeholder="Lien de l'image (ex: img/mon-vase.jpg ou https://...)" style="width:100%;">
             
             <button onclick="ajouterProduit()" style="width:100%; margin-top:10px;">Mettre en ligne</button>
@@ -174,4 +186,4 @@
     </script>
 
 </body>
-</html>    
+</html>
