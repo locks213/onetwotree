@@ -94,6 +94,10 @@
         </ul>
     </nav>
 
+    <div id="user-info" style="display:none; text-align:center; padding:5px; background:#f0f0f0; border-bottom:1px solid #ccc;">
+        Connecté en tant que : <strong id="user-email"></strong>
+    </div>
+
     <main class="showcase">
         <h1>Bienvenue à l'Atelier</h1>
         
@@ -143,12 +147,15 @@
     <div id="auth-modal" class="modal">
         <h3 id="auth-title" style="text-align:center; margin-top:0;">Connexion</h3>
         
-        <input type="email" id="client-email" class="auth-input" placeholder="Votre Email">
-        <input type="password" id="client-password" class="auth-input" placeholder="Mot de passe">
+        <form onsubmit="gererAuth(); return false;">
+            <input type="email" id="client-email" class="auth-input" placeholder="Votre Email">
+            <input type="password" id="client-password" class="auth-input" placeholder="Mot de passe">
+            
 
-        <button onclick="gererAuth()" id="auth-action-btn" class="btn-primary" style="padding:10px;">
-            Se connecter
-        </button>
+            <button type="submit" id="auth-action-btn" class="btn-primary" style="padding:10px;">
+                Se connecter
+            </button>
+        </form>
 
         <hr>
         

@@ -294,9 +294,21 @@ async function gererAuth() {
     }
 
     if (modeInscription) {
+        // Essayer de se connecter d'abord pour voir si le compte existe
+        const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (!signInError) {
+            // Compte existe et mot de passe correct
+            alert("Ce compte existe déjà. Connexion réussie !");
+            toggleAuthModal();
+            verificationSession();
+            return;
+        }
+        // Si connexion échoue, tenter l'inscription
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) alert("Erreur : " + error.message);
-        else {
+        if (error) {
+            console.log("Erreur signUp:", error.message); // Debug
+            alert("Erreur : " + error.message);
+        } else {
             alert("Compte créé ! Vérifiez vos emails pour confirmer.");
             toggleAuthModal();
         }
@@ -347,16 +359,21 @@ async function verificationSession() {
     const loginLink = document.getElementById('login-btn-text');
     const logoutLink = document.getElementById('logout-btn');
     const mainLink = document.getElementById('auth-link');
+    const userInfo = document.getElementById('user-info');
+    const userEmail = document.getElementById('user-email');
 
-    if(mainLink && loginLink && logoutLink) {
+    if(mainLink && loginLink && logoutLink && userInfo && userEmail) {
         if (session) {
-            mainLink.innerText = "Mon Compte (Connecté)";
+            mainLink.innerText = "Mon Compte";
             loginLink.style.display = 'none';
             logoutLink.style.display = 'block';
+            userEmail.innerText = session.user.email;
+            userInfo.style.display = 'block';
         } else {
             mainLink.innerText = "Mon Espace";
             loginLink.style.display = 'block';
             logoutLink.style.display = 'none';
+            userInfo.style.display = 'none';
         }
     }
 }
@@ -907,4 +924,30 @@ async function chargerHistoriqueClient() {
             });
         }
     }
+}
+
+// --- BONUS : Touche "Entrée" pour se connecter ---
+
+// On écoute le champ "Mot de passe"
+const inputPassword = document.getElementById('password');
+if (inputPassword) {
+    inputPassword.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            // On empêche le comportement par défaut (rechargement de page)
+            event.preventDefault();
+            // On déclenche la connexion
+            signIn();
+        }
+    });
+}
+
+// On écoute aussi le champ "Email" (pratique si le mot de passe est pré-rempli)
+const inputEmail = document.getElementById('email');
+if (inputEmail) {
+    inputEmail.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            signIn();
+        }
+    });
 }
