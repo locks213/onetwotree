@@ -199,19 +199,47 @@ function toggleOrders() {
     }
 }
 
-function afficherHistorique() {
+async function afficherHistorique() {
     const container = document.getElementById('orders-list');
-    const historique = JSON.parse(localStorage.getItem('monHistorique')) || [];
-
     if(!container) return;
 
-    if (historique.length === 0) {
+    // Vérifier si l'utilisateur est connecté
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    let commandes = [];
+
+    if (session) {
+        // Récupérer les commandes depuis Supabase pour l'utilisateur connecté
+        const { data, error } = await supabaseClient
+            .from('commandes')
+            .select('articles, total, created_at, statut')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Erreur récupération commandes:", error);
+            container.innerHTML = '<p style="text-align:center; color:#777;">Erreur de chargement des commandes.</p>';
+            return;
+        }
+        commandes = data.map(cmd => ({
+            date: new Date(cmd.created_at).toLocaleDateString() + ' ' + new Date(cmd.created_at).toLocaleTimeString(),
+            articles: cmd.articles,
+            total: cmd.total.toFixed(2),
+            statut: cmd.statut
+        }));
+    } else {
+        // Utiliser localStorage pour les invités
+        commandes = JSON.parse(localStorage.getItem('monHistorique')) || [];
+    }
+
+    if (commandes.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#777;">Aucune commande enregistrée.</p>';
         return;
     }
+
     container.innerHTML = "";
-    historique.slice().reverse().forEach(cmd => {
+    commandes.forEach(cmd => {
         let details = cmd.articles.map(a => `<li>${a.titre}</li>`).join('');
+        let statutInfo = cmd.statut ? `<br><small style="color:#888;">Statut: ${cmd.statut.split(' (')[0]}</small>` : '';
         container.innerHTML += `
             <div style="background:#f9f9f9; border:1px solid #eee; padding:10px; margin-bottom:10px; border-radius:4px;">
                 <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
@@ -219,6 +247,7 @@ function afficherHistorique() {
                     <span>${cmd.total}€</span>
                 </div>
                 <ul style="font-size:0.85em; margin:0; padding-left:20px; color:#555;">${details}</ul>
+                ${statutInfo}
             </div>`;
     });
 }
@@ -590,6 +619,18 @@ function afficherBoutonsPayPal() {
                     console.error("Erreur Supabase:", error);
                 } else {
                     alert("SUCCÈS : Commande enregistrée dans la base !");
+                    
+                    // --- AJOUT : SAUVEGARDE LOCALE DE L'HISTORIQUE ---
+                    const nouvelleCommande = {
+                        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
+                        articles: panier,
+                        total: total.toFixed(2)
+                    };
+                    let historique = JSON.parse(localStorage.getItem('monHistorique')) || [];
+                    historique.push(nouvelleCommande);
+                    localStorage.setItem('monHistorique', JSON.stringify(historique));
+                    // -------------------------------------------------
+                    
                     viderPanier();
                     document.getElementById('cart-modal').style.display = 'none';
                 }
@@ -768,8 +809,10 @@ async function ouvrirProfil() {
         document.getElementById('prof-adresse').value = profil.adresse || '';
         document.getElementById('prof-cp').value = profil.code_postal || '';
         document.getElementById('prof-ville').value = profil.ville || '';
+
+        
     }
-    chargerHistoriqueClient();
+chargerHistoriqueClient();    
 }
 
 // B. Sauvegarder les modifications (Version UPSERT blindée)
