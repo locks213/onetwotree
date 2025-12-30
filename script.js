@@ -82,37 +82,68 @@ function sauvegarderPanier() {
     localStorage.setItem('monPanier', JSON.stringify(panier));
 }
 
-function payerPanier() {
+async function payerPanier() {
     if(panier.length === 0) {
         alert("Votre panier est vide !");
         return;
     }
     
-    // ⚠️ Mettez votre vrai email PayPal ici
-    const emailPayPal = "votre-email-paypal@exemple.com"; 
-    
+    // 1. Calcul des totaux
     let total = 0;
     panier.forEach(p => total += p.prix);
-    const nomCommande = `Commande de ${panier.length} articles (Atelier)`;
+    const nomCommande = `Commande de ${panier.length} articles`;
 
+    // 2. Demande de confirmation
     if(confirm(`Payer un total de ${total.toFixed(2)}€ via PayPal ?`)) {
-        // Sauvegarde Historique Local
+        
+        // --- NOUVEAU : SAUVEGARDE SUPABASE ---
+        
+        // On regarde si l'utilisateur est connecté pour récupérer son ID et Email
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        let clientEmail = "Invité";
+        let userId = null;
+
+        if (session) {
+            clientEmail = session.user.email;
+            userId = session.user.id;
+        }
+
+        // On insère la commande dans la base de données
+        const { error } = await supabaseClient.from('commandes').insert({
+            client_email: clientEmail,
+            user_id: userId,
+            articles: panier, // Supabase convertit automatiquement le tableau JS en JSON
+            total: total,
+            statut: "Redirigé vers PayPal" 
+        });
+
+        if (error) {
+            console.error("Erreur sauvegarde commande:", error);
+            alert("Une erreur est survenue lors de l'enregistrement de la commande, mais vous allez être redirigé vers le paiement.");
+        }
+        // -------------------------------------
+
+        // 3. Gestion Locale (On garde ça pour l'instant pour l'affichage immédiat)
         const nouvelleCommande = {
             date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
             articles: panier,
             total: total.toFixed(2)
         };
-        
         let historique = JSON.parse(localStorage.getItem('monHistorique')) || [];
         historique.push(nouvelleCommande);
         localStorage.setItem('monHistorique', JSON.stringify(historique));
 
-        // Redirection PayPal
+        // 4. Redirection PayPal
+        const emailPayPal = "votre-email-paypal@exemple.com"; // REMETS TON EMAIL PAYPAL ICI
         const url = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${emailPayPal}&currency_code=EUR&amount=${total}&item_name=${encodeURIComponent(nomCommande)}`;
-        window.open(url, '_blank');
         
-        viderPanier(); // On vide le panier après le clic vers PayPal
+        // On vide le panier et on redirige
+        viderPanier(); 
         document.getElementById('cart-modal').style.display = 'none';
+        
+        // Petite astuce : on ouvre PayPal dans le même onglet ou un nouvel onglet
+        window.open(url, '_blank');
     }
 }
 

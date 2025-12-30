@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Artisan - L'Atelier</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .bio-container {
+            display: flex;
+            flex-wrap: wrap; /* Pour que ça passe sur mobile */
+            gap: 30px;
+            align-items: center;
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .bio-image {
+            flex: 1;
+            min-width: 300px;
+            border: 5px solid white;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            transform: rotate(-2deg); /* Petit effet "photo posée" */
+        }
+
+        .bio-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .bio-content {
+            flex: 2;
+            background: rgba(255,255,255,0.7); /* Fond lisible */
+            padding: 20px;
+            border-radius: 4px;
+            border: 1px solid #8b7355;
+        }
+
+        .signature {
+            font-family: 'Brush Script MT', cursive; /* Effet signature */
+            font-size: 1.5em;
+            text-align: right;
+            margin-top: 20px;
+            color: #5a4a42;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <img src="img/header.jpg" alt="Atelier vue d'ensemble" class="header-img">
+    </header>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="index.html">Accueil / Boutique</a></li>
+            <li class="dropdown">
+                <a href="#">À Propos</a>
+                <div class="dropdown-content">
+                    <a href="apropos.html">L'Artisan</a>
+                    <a href="contact.html">Nous contacter</a>
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="#" id="auth-link">Mon Espace</a>
+                <div class="dropdown-content">
+                   <a href="index.html">Retour à la boutique pour se connecter</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="showcase">
+        <h1>Derrière l'Atelier</h1>
+        
+        <div class="bio-container">
+            <div class="bio-image">
+                <img src="img/artisan-portrait.jpg" alt="Portrait de l'Artisan">
+            </div>
+
+            <div class="bio-content">
+                <h3>Une histoire de passion</h3>
+                <p>
+                    Bienvenue dans mon univers. Tout a commencé il y a 10 ans, dans un petit garage poussiéreux, avec un simple morceau de bois et une vieille scie.
+                </p>
+                <p>
+                    Aujourd'hui, l'Atelier est un lieu où le temps s'arrête. Je privilégie les <strong>matières nobles</strong> et locales. Chaque nœud du bois, chaque imperfection de la céramique raconte une histoire que je tente de sublimer.
+                </p>
+                <p>
+                    Je ne cherche pas la perfection industrielle, mais l'émotion du <em>fait-main</em>. Chaque objet que vous trouverez sur ce site a été façonné, poncé et vernis avec patience.
+                </p>
+                
+                <div class="signature">
+                    Votre Artisan.
+                </div>
+            </div>
+        </div>
+
+        <hr style="margin: 40px 0; border-top: 1px solid #8b7355;">
+
+        <div style="text-align: center;">
+            <h3>Une question ou un projet sur mesure ?</h3>
+            <p>Je suis toujours ravi d'échanger avec des passionnés.</p>
+            <a href="mailto:ton-email@atelier.com" class="btn-primary" style="text-decoration: none; display: inline-block; width: auto; margin-top: 10px;">
+                <a href="contact.html">Me contacter par Email</a>
+        </div>
+
+    </main>
+
+    <div class="fixed-logo">
+        <img src="img/logo.jpg" alt="Logo Atelier">
+    </div>
+
+</body>
+</html>

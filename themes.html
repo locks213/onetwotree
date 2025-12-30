@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nos Univers - L'Atelier</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR"></script>
+
+    <style>
+        /* Un petit style pour rendre le filtre plus joli sur cette page */
+        .filter-container {
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #8b7355;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+        select {
+            padding: 10px;
+            font-size: 1.1em;
+            font-family: sans-serif; /* Plus lisible */
+            border-radius: 4px;
+            border: 1px solid #5a4a42;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <img src="img/header.jpg" alt="Atelier vue d'ensemble" class="header-img">
+    </header>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="index.html">Accueil</a></li>
+            
+            <li class="dropdown">
+                <a href="#">Catalogue</a>
+                <div class="dropdown-content">
+                    <a href="themes.html" style="font-weight:bold;">Thèmes / Univers</a>
+                    <a href="index.html">Tout le catalogue</a>
+                </div>
+            </li>
+
+            <li class="dropdown">
+                <a href="#">À Propos</a>
+                <div class="dropdown-content">
+                    <a href="apropos.html">L'Artisan</a>
+                    <a href="contact.html">Nous contacter</a>
+                </div>
+            </li>
+
+            <li class="dropdown">
+                <a href="#" id="auth-link">Mon Espace</a>
+                <div class="dropdown-content">
+                    <a href="index.html">Connexion (Accueil)</a>
+                    <a href="#" onclick="toggleOrders()">Mes commandes</a>
+                    <a href="admin.html">Admin</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="showcase" style="text-align: center;">
+        
+        <h1>Nos Univers</h1>
+        <p>Sélectionnez un thème pour découvrir nos créations spécifiques.</p>
+
+        <button id="cart-btn" onclick="toggleCart()">
+            Panier (<span id="cart-count">0</span>)
+        </button>
+
+        <div class="filter-container">
+            <label for="theme-select" style="font-weight:bold; margin-right:10px;">Je recherche :</label>
+            
+            <select id="theme-select" onchange="chargerVitrine(this.value)">
+                <option value="Tout">-- Tout voir --</option>
+                <option value="Découpe Laser">Découpe Laser</option>
+                <option value="Céramique">Céramique</option>
+                <option value="Bois">Travail du Bois</option>
+                <option value="Textile">Textile</option>
+                <option value="Papeterie">Papeterie</option>
+            </select>
+        </div>
+
+        <div class="gallery-grid" id="gallery-container">
+            <p>Chargement des collections...</p>
+        </div>   
+
+    </main>
+
+    <div class="fixed-logo">
+        <img src="img/logo.jpg" alt="Logo Atelier">
+    </div>
+
+    <div id="cart-modal" class="modal" style="display:none;">
+        <h3>Mon Panier</h3>
+        <table class="cart-table"><tbody id="cart-items"></tbody></table>
+        <p style="text-align:right;">Total: <strong><span id="cart-total">0</span> €</strong></p>
+        <div id="paypal-button-container"></div>
+        <button onclick="viderPanier()" class="btn-secondary">Vider</button>
+        <button onclick="toggleCart()" style="width:100%; margin-top:5px;">Fermer</button>
+    </div>
+
+    <div id="orders-modal" class="modal" style="width: 350px; z-index: 2000; display:none;">
+        <h3 style="text-align:center;">Mes Commandes</h3>
+        <div id="orders-list"></div>
+        <button onclick="toggleOrders()" style="width:100%;">Fermer</button>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
