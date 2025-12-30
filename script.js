@@ -535,87 +535,74 @@ window.onload = function() {
 
 function afficherBoutonsPayPal() {
     const container = document.getElementById('paypal-button-container');
-    
-    // Si le conteneur n'existe pas (bug) ou s'il a déjà des boutons (pour éviter les doublons), on arrête
-    if (!container) return;
-    if (container.innerHTML !== "") return; 
-
-    // On vide le conteneur par sécurité avant de dessiner
-    container.innerHTML = "";
+    if (!container || container.innerHTML !== "") return; 
 
     paypal.Buttons({
-        style: {
-            color:  'gold',
-            shape:  'rect',
-            label:  'pay',
-            height: 40
-        },
+        style: { color: 'gold', shape: 'rect', label: 'pay', height: 40 },
 
-        // A. CRÉATION DE LA COMMANDE
         createOrder: function(data, actions) {
-            // On recalcule le total ici pour la sécurité
             let total = 0;
             panier.forEach(p => total += p.prix);
-            
-            if(total === 0) {
-                alert("Votre panier est vide !");
-                return actions.reject();
-            }
+            if(total === 0) return actions.reject();
 
             return actions.order.create({
                 purchase_units: [{
                     description: "Commande Atelier",
-                    amount: {
-                        value: total.toFixed(2) // Le montant doit être une chaîne (ex: "45.00")
-                    }
+                    amount: { value: total.toFixed(2) }
                 }]
             });
         },
 
-        // B. PAIEMENT VALIDÉ (C'est ici qu'on sauvegarde !)
         onApprove: async function(data, actions) {
-            // 1. On capture la transaction
-            const orderData = await actions.order.capture();
-            console.log('Paiement PayPal réussi :', orderData);
-
-            // 2. On prépare les infos pour Supabase
-            const { data: { session } } = await supabaseClient.auth.getSession();
+            // DIAGNOSTIC 1
+            alert("Étape 1 : PayPal a validé le paiement. On capture...");
             
-            let clientEmail = "Invité (" + orderData.payer.email_address + ")";
-            let userId = null;
+            try {
+                const orderData = await actions.order.capture();
+                // DIAGNOSTIC 2
+                alert("Étape 2 : Capture réussie ! On prépare la sauvegarde Supabase...");
+                console.log('PayPal Data:', orderData);
 
-            if (session) {
-                clientEmail = session.user.email;
-                userId = session.user.id;
-            }
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                
+                // Sécurisation de l'email (parfois PayPal ne le renvoie pas direct)
+                let emailPayPal = (orderData.payer && orderData.payer.email_address) ? orderData.payer.email_address : "Inconnu";
+                let clientEmail = session ? session.user.email : "Invité (" + emailPayPal + ")";
+                let userId = session ? session.user.id : null;
 
-            let total = 0;
-            panier.forEach(p => total += p.prix);
+                let total = 0;
+                panier.forEach(p => total += p.prix);
 
-            // 3. On insère dans la base de données
-            const { error } = await supabaseClient.from('commandes').insert({
-                client_email: clientEmail,
-                user_id: userId,
-                articles: panier,
-                total: total,
-                statut: "Payé (ID: " + orderData.id + ")" // Preuve du paiement
-            });
+                // DIAGNOSTIC 3
+                alert("Étape 3 : Envoi vers la table 'commandes'...");
 
-            // 4. Feedback utilisateur
-            if (error) {
-                console.error("Erreur sauvegarde Supabase :", error);
-                alert("Paiement reçu, mais erreur lors de la sauvegarde de la commande. Contactez l'artisan.");
-            } else {
-                alert("Merci ! Votre commande a été payée et validée.");
-                viderPanier(); // On vide le panier local
-                document.getElementById('cart-modal').style.display = 'none'; // On ferme la fenêtre
+                const { error } = await supabaseClient.from('commandes').insert({
+                    client_email: clientEmail,
+                    user_id: userId,
+                    articles: panier,
+                    total: total,
+                    statut: "Payé (ID: " + orderData.id + ")"
+                });
+
+                if (error) {
+                    // C'est ici qu'on saura si Supabase refuse
+                    alert("ERREUR SUPABASE : " + error.message);
+                    console.error("Erreur Supabase:", error);
+                } else {
+                    alert("SUCCÈS : Commande enregistrée dans la base !");
+                    viderPanier();
+                    document.getElementById('cart-modal').style.display = 'none';
+                }
+
+            } catch (err) {
+                // Si le code plante complètement (bug JS)
+                alert("CRASH JS : " + err.message);
+                console.error("Crash:", err);
             }
         },
 
-        // C. GESTION DES ERREURS
         onError: function(err) {
-            console.error('Erreur PayPal:', err);
-            alert("Le paiement n'a pas pu aboutir. Veuillez réessayer.");
+            alert("Erreur PayPal globale : " + err);
         }
 
     }).render('#paypal-button-container');
@@ -665,14 +652,19 @@ async function chargerCommandesAdmin() {
         }
 
         commandes.forEach(cmd => {
-            // Mise en forme de la date
             const date = new Date(cmd.created_at).toLocaleString('fr-FR');
             
-            // Calcul couleur badge statut
-            let badgeColor = '#999'; // Gris (En attente)
+            // Gestion des couleurs de badge
+            let badgeColor = '#999'; // Gris par défaut
             if(cmd.statut.includes('Payé')) badgeColor = '#28a745'; // Vert
-            
-            // Liste des articles
+            if(cmd.statut.includes('Expédié')) badgeColor = '#007bff'; // Bleu
+
+            // Bouton d'action (visible seulement si pas encore expédié)
+            let actionBtn = '';
+            if (!cmd.statut.includes('Expédié')) {
+                actionBtn = `<button onclick="marquerExpedie(${cmd.id})" style="margin-left:10px; padding:2px 8px; font-size:0.8em; background:#007bff; color:white; border:none; border-radius:3px; cursor:pointer;">📦 Marquer expédié</button>`;
+            }
+
             let articlesHtml = "";
             if (Array.isArray(cmd.articles)) {
                 articlesHtml = cmd.articles.map(a => `<li>${a.titre} (${a.prix}€)</li>`).join('');
@@ -680,9 +672,12 @@ async function chargerCommandesAdmin() {
 
             container.innerHTML += `
                 <div class="admin-card" style="border-left-color: ${badgeColor};">
-                    <div style="display:flex; justify-content:space-between;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
                         <strong>Date : ${date}</strong>
-                        <span class="status-badge" style="background:${badgeColor}">${cmd.statut}</span>
+                        <div>
+                            <span class="status-badge" style="background:${badgeColor}">${cmd.statut}</span>
+                            ${actionBtn}
+                        </div>
                     </div>
                     <p style="margin:5px 0;"><strong>Client :</strong> ${cmd.client_email}</p>
                     <p style="margin:5px 0; color:#555;"><strong>Total :</strong> ${cmd.total} €</p>
@@ -739,5 +734,86 @@ async function chargerMessagesAdmin() {
                     </div>
                 </div>`;
         });
+    }
+}
+// --- 10. GESTION DU PROFIL CLIENT ---
+
+// A. Ouvrir la modale et charger les données
+async function ouvrirProfil() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    // Si pas connecté, on ouvre la fenêtre de connexion à la place
+    if (!session) {
+        toggleAuthModal();
+        return;
+    }
+
+    // On ferme les autres fenêtres
+    fermerToutesModalesSauf('profile-modal');
+    document.getElementById('profile-modal').style.display = 'block';
+
+    // On va chercher les infos dans la table 'profils'
+    const { data: profil, error } = await supabaseClient
+        .from('profils')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+    if (error) {
+        console.error("Erreur chargement profil:", error);
+    } else if (profil) {
+        // On remplit les champs
+        document.getElementById('prof-nom').value = profil.nom_complet || '';
+        document.getElementById('prof-tel').value = profil.telephone || '';
+        document.getElementById('prof-adresse').value = profil.adresse || '';
+        document.getElementById('prof-cp').value = profil.code_postal || '';
+        document.getElementById('prof-ville').value = profil.ville || '';
+    }
+}
+
+// B. Sauvegarder les modifications (Version UPSERT blindée)
+async function sauvegarderProfil() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    // On prépare les données
+    const infoProfil = {
+        id: session.user.id, // <--- TRES IMPORTANT : On force l'ID pour que l'Upsert marche
+        email: session.user.email, // On remet l'email au cas où
+        nom_complet: document.getElementById('prof-nom').value,
+        telephone: document.getElementById('prof-tel').value,
+        adresse: document.getElementById('prof-adresse').value,
+        code_postal: document.getElementById('prof-cp').value,
+        ville: document.getElementById('prof-ville').value,
+        updated_at: new Date()
+    };
+
+    // On utilise "upsert" au lieu de "update"
+    const { error } = await supabaseClient
+        .from('profils')
+        .upsert(infoProfil);
+
+    if (error) {
+        console.error("Erreur sauvegarde :", error);
+        alert('Erreur lors de la sauvegarde : ' + error.message);
+    } else {
+        alert('Profil enregistré avec succès ! ✅');
+        document.getElementById('profile-modal').style.display = 'none';
+    }
+}
+async function marquerExpedie(idCommande) {
+    if(!confirm("Confirmer que cette commande a été expédiée ?")) return;
+
+    // Mise à jour dans Supabase
+    const { error } = await supabaseClient
+        .from('commandes')
+        .update({ statut: 'Expédié 🚚' })
+        .eq('id', idCommande);
+
+    if(error) {
+        alert("Erreur : " + error.message);
+    } else {
+        // On recharge la liste pour voir le changement (le badge deviendra bleu)
+        chargerCommandesAdmin();
     }
 }
