@@ -769,6 +769,7 @@ async function ouvrirProfil() {
         document.getElementById('prof-cp').value = profil.code_postal || '';
         document.getElementById('prof-ville').value = profil.ville || '';
     }
+    chargerHistoriqueClient();
 }
 
 // B. Sauvegarder les modifications (Version UPSERT blindée)
@@ -815,5 +816,52 @@ async function marquerExpedie(idCommande) {
     } else {
         // On recharge la liste pour voir le changement (le badge deviendra bleu)
         chargerCommandesAdmin();
+    }
+}
+
+// C. Charger l'historique des commandes du client
+async function chargerHistoriqueClient() {
+    const container = document.getElementById('client-orders-list');
+    
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    // On cherche les commandes où l'ID utilisateur correspond à celui qui est connecté
+    const { data: commandes, error } = await supabaseClient
+        .from('commandes')
+        .select('*')
+        .eq('user_id', session.user.id) // <-- La sécurité est ici
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Erreur historique:", error);
+        container.innerHTML = "<p>Impossible de charger l'historique.</p>";
+    } else {
+        if (commandes.length === 0) {
+            container.innerHTML = "<p style='text-align:center;'>Aucune commande pour le moment.</p>";
+        } else {
+            container.innerHTML = ""; // On vide le "Chargement..."
+            
+            commandes.forEach(cmd => {
+                const date = new Date(cmd.created_at).toLocaleDateString('fr-FR');
+                
+                // Couleur du statut
+                let color = "#666";
+                if(cmd.statut.includes("Payé")) color = "green";
+                if(cmd.statut.includes("Expédié")) color = "#007bff";
+
+                container.innerHTML += `
+                    <div style="background:white; padding:10px; margin-bottom:8px; border-radius:4px; border:1px solid #ddd; font-size:0.9em;">
+                        <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                            <span>📅 ${date}</span>
+                            <span>${cmd.total} €</span>
+                        </div>
+                        <div style="margin-top:5px; color:${color};">
+                            Statut : ${cmd.statut}
+                        </div>
+                    </div>
+                `;
+            });
+        }
     }
 }
