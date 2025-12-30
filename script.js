@@ -33,8 +33,32 @@ function ajouterAuPanier(titre, prix) {
 
 function toggleCart() {
     const modal = document.getElementById('cart-modal');
-    fermerToutesModalesSauf('cart-modal'); // Ferme les autres fenêtres
-    if(modal) modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'block' : 'none';
+    fermerToutesModalesSauf('cart-modal');
+    
+    if(modal) {
+        if (modal.style.display === 'none' || modal.style.display === '') {
+            modal.style.display = 'block';
+            
+            // --- AJOUT IMPORTANT ICI ---
+            // On attend un tout petit peu que la fenêtre s'ouvre pour dessiner les boutons
+            setTimeout(() => {
+                // On vide d'abord le conteneur pour ne pas avoir 2 boutons si on rouvre
+                const container = document.getElementById('paypal-button-container');
+                if(container) container.innerHTML = ""; 
+                
+                // On affiche les boutons si le panier n'est pas vide
+                if (panier.length > 0) {
+                    afficherBoutonsPayPal();
+                } else {
+                    if(container) container.innerHTML = "<p style='text-align:center; font-size:0.8em;'>Le panier est vide</p>";
+                }
+            }, 100); 
+            // ---------------------------
+
+        } else {
+            modal.style.display = 'none';
+        }
+    }
 }
 
 function mettreAJourPanierAffichage() {
@@ -469,3 +493,93 @@ window.onload = function() {
         });
     }
 };
+
+// --- 8. GESTION PAYPAL (INTELLIGENT) ---
+
+function afficherBoutonsPayPal() {
+    const container = document.getElementById('paypal-button-container');
+    
+    // Si le conteneur n'existe pas (bug) ou s'il a déjà des boutons (pour éviter les doublons), on arrête
+    if (!container) return;
+    if (container.innerHTML !== "") return; 
+
+    // On vide le conteneur par sécurité avant de dessiner
+    container.innerHTML = "";
+
+    paypal.Buttons({
+        style: {
+            color:  'gold',
+            shape:  'rect',
+            label:  'pay',
+            height: 40
+        },
+
+        // A. CRÉATION DE LA COMMANDE
+        createOrder: function(data, actions) {
+            // On recalcule le total ici pour la sécurité
+            let total = 0;
+            panier.forEach(p => total += p.prix);
+            
+            if(total === 0) {
+                alert("Votre panier est vide !");
+                return actions.reject();
+            }
+
+            return actions.order.create({
+                purchase_units: [{
+                    description: "Commande Atelier",
+                    amount: {
+                        value: total.toFixed(2) // Le montant doit être une chaîne (ex: "45.00")
+                    }
+                }]
+            });
+        },
+
+        // B. PAIEMENT VALIDÉ (C'est ici qu'on sauvegarde !)
+        onApprove: async function(data, actions) {
+            // 1. On capture la transaction
+            const orderData = await actions.order.capture();
+            console.log('Paiement PayPal réussi :', orderData);
+
+            // 2. On prépare les infos pour Supabase
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            let clientEmail = "Invité (" + orderData.payer.email_address + ")";
+            let userId = null;
+
+            if (session) {
+                clientEmail = session.user.email;
+                userId = session.user.id;
+            }
+
+            let total = 0;
+            panier.forEach(p => total += p.prix);
+
+            // 3. On insère dans la base de données
+            const { error } = await supabaseClient.from('commandes').insert({
+                client_email: clientEmail,
+                user_id: userId,
+                articles: panier,
+                total: total,
+                statut: "Payé (ID: " + orderData.id + ")" // Preuve du paiement
+            });
+
+            // 4. Feedback utilisateur
+            if (error) {
+                console.error("Erreur sauvegarde Supabase :", error);
+                alert("Paiement reçu, mais erreur lors de la sauvegarde de la commande. Contactez l'artisan.");
+            } else {
+                alert("Merci ! Votre commande a été payée et validée.");
+                viderPanier(); // On vide le panier local
+                document.getElementById('cart-modal').style.display = 'none'; // On ferme la fenêtre
+            }
+        },
+
+        // C. GESTION DES ERREURS
+        onError: function(err) {
+            console.error('Erreur PayPal:', err);
+            alert("Le paiement n'a pas pu aboutir. Veuillez réessayer.");
+        }
+
+    }).render('#paypal-button-container');
+}
