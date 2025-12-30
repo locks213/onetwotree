@@ -130,7 +130,12 @@
                     </select>
                     <input type="number" id="new-prix" placeholder="Prix (€)" style="flex:1;">
                 </div>
-                <input type="text" id="new-image" placeholder="Lien image..." style="width:100%;">
+                <input type="text" id="new-image" placeholder="Lien de l'image (sera rempli automatiquement)" style="width:100%; display:none;">
+
+                <div style="margin: 10px 0;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">Photo du produit :</label>
+                    <input type="file" id="image-upload" accept="image/*" style="border: 1px solid #ccc; padding: 10px; width: 100%; background: white;">
+                </div>
                 <button onclick="ajouterProduit()" style="width:100%; margin-top:10px;">Mettre en ligne</button>
             </div>
             

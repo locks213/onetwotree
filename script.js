@@ -410,36 +410,73 @@ async function chargerListeAdmin() {
 }
 
 async function ajouterProduit() {
-    // Vérification admin
+    // 1. Vérification Admin
     const isAdmin = await verifierAdmin();
     if (!isAdmin) {
-        alert("Accès refusé : Seuls les administrateurs peuvent ajouter des produits.");
+        alert("Accès refusé.");
         return;
     }
 
     const titreInput = document.getElementById('new-titre');
     const prixInput = document.getElementById('new-prix');
-    const imgInput = document.getElementById('new-image'); // URL de l'image
+    const catInput = document.getElementById('new-categorie');
+    const fileInput = document.getElementById('image-upload'); // Le fichier
 
-    const catInput = document.getElementById('new-categorie'); // On récupère le menu
-    // -------------------------------
+    if(!titreInput.value || !prixInput.value) {
+        alert("Veuillez mettre au moins un titre et un prix.");
+        return;
+    }
 
-    if(!titreInput || !prixInput) return;
+    let imageUrl = "img/default.jpg"; // Image par défaut si rien n'est envoyé
 
+    // 2. GESTION DE L'UPLOAD D'IMAGE
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        // On crée un nom de fichier unique pour éviter d'écraser une autre image
+        // Ex: 1678945612-mon-image.jpg
+        const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+
+        // On envoie chez Supabase Storage
+        const { data, error: uploadError } = await supabaseClient
+            .storage
+            .from('images-produits') // Le nom exact de ton bucket créé à l'étape 1
+            .upload(fileName, file);
+
+        if (uploadError) {
+            console.error(uploadError);
+            alert("Erreur lors de l'envoi de l'image : " + uploadError.message);
+            return; // On arrête tout si l'image plante
+        }
+
+        // Si ça a marché, on récupère l'URL publique pour l'afficher sur le site
+        const { data: publicUrlData } = supabaseClient
+            .storage
+            .from('images-produits')
+            .getPublicUrl(fileName);
+            
+        imageUrl = publicUrlData.publicUrl;
+    }
+
+    // 3. ENREGISTREMENT DU PRODUIT (Comme avant, mais avec la nouvelle URL)
     const { error } = await supabaseClient.from('produits').insert([{ 
         titre: titreInput.value, 
         prix: parseFloat(prixInput.value), 
-        image_file: imgInput.value,
+        image_file: imageUrl, // <-- C'est ici que l'URL générée est stockée
         categorie: catInput.value, 
     }]);
 
-    if (error) alert("Erreur : " + error.message);
-    else { 
-        alert('Produit ajouté !'); 
+    if (error) {
+        alert("Erreur base de données : " + error.message);
+    } else { 
+        alert('Produit mis en ligne avec succès !'); 
+        
+        // Remise à zéro
         titreInput.value = ''; 
         prixInput.value = '';
-        imgInput.value = '';
-        catInput.value = 'Divers'; // On remet à zéro
+        fileInput.value = ''; 
+        catInput.value = 'Divers';
+        
         chargerListeAdmin(); 
     }
 }
