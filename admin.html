@@ -75,41 +75,91 @@
         <p id="login-msg" style="color:red; margin-top:10px;"></p>
     </div>
 
-    <div id="dashboard-section" class="admin-container hidden">
+<style>
+        /* STYLE DES ONGLETS */
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn {
+            flex: 1; padding: 15px; cursor: pointer; background: #eee; border: none;
+            font-weight: bold; font-size: 1em; color: #555; transition: 0.3s;
+        }
+        .tab-btn:hover { background: #ddd; }
+        .tab-btn.active { background: #333; color: white; border-bottom: none; }
+        
+        /* Contenu des onglets */
+        .tab-content { display: none; animation: fadeIn 0.5s; }
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Style des cartes commandes/messages */
+        .admin-card {
+            background: #fff; border: 1px solid #ddd; padding: 15px; 
+            margin-bottom: 10px; border-left: 5px solid #333; text-align: left;
+        }
+        .status-badge {
+            display: inline-block; padding: 3px 8px; border-radius: 4px; 
+            font-size: 0.8em; font-weight: bold; color: white; background: #999;
+        }
+    </style>
+
+    <div id="dashboard-section" class="admin-container hidden" style="max-width: 900px;">
+        
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0;">Gestion du Catalogue</h2>
+            <h2 style="margin:0;">Tableau de Bord</h2>
             <button onclick="logoutClient()" style="background:#cc0000; padding:5px 10px; font-size:0.8em;">Déconnexion</button>
         </div>
 
-        <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
-            <h3 style="margin-top:0;">Ajouter une création</h3>
-            
-            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center;">
-                <input type="text" id="new-titre" placeholder="Titre (ex: Vase en céramique)" style="flex:2;">
-                
-                <select id="new-categorie" style="flex:1; padding: 12px; border: 1px solid #ccc; border-radius: 4px;">
-                    <option value="Divers">-- Catégorie --</option>
-                    <option value="Découpe Laser">Découpe Laser</option>
-                    <option value="Céramique">Céramique</option>
-                    <option value="Bois">Bois</option>
-                    <option value="Textile">Textile</option>
-                    <option value="Papeterie">Papeterie</option>
-                </select>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tab-produits')">📦 Produits</button>
+            <button class="tab-btn" onclick="switchTab('tab-commandes')">🛒 Commandes</button>
+            <button class="tab-btn" onclick="switchTab('tab-messages')">✉️ Messages</button>
+        </div>
 
-                <input type="number" id="new-prix" placeholder="Prix (€)" style="flex:1;">
+        <div id="tab-produits" class="tab-content active">
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <h3 style="margin-top:0;">Ajouter une création</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center;">
+                    <input type="text" id="new-titre" placeholder="Titre (ex: Vase)" style="flex:2;">
+                    <select id="new-categorie" style="flex:1; padding: 12px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="Divers">-- Catégorie --</option>
+                        <option value="Découpe Laser">Découpe Laser</option>
+                        <option value="Céramique">Céramique</option>
+                        <option value="Bois">Bois</option>
+                        <option value="Textile">Textile</option>
+                        <option value="Papeterie">Papeterie</option>
+                    </select>
+                    <input type="number" id="new-prix" placeholder="Prix (€)" style="flex:1;">
+                </div>
+                <input type="text" id="new-image" placeholder="Lien image..." style="width:100%;">
+                <button onclick="ajouterProduit()" style="width:100%; margin-top:10px;">Mettre en ligne</button>
             </div>
-
-            <input type="text" id="new-image" placeholder="Lien de l'image (ex: img/mon-vase.jpg ou https://...)" style="width:100%;">
             
-            <button onclick="ajouterProduit()" style="width:100%; margin-top:10px;">Mettre en ligne</button>
+            <h3 style="text-align:left;">Produits en ligne</h3>
+            <div id="admin-product-list" style="text-align: left; max-height: 500px; overflow-y: auto;">
+                <p>Chargement...</p>
+            </div>
         </div>
-        
-        <hr style="margin:30px 0; border:0; border-top:1px solid #eee;">
-        
-        <h3 style="text-align:left;">Produits en ligne</h3>
-        <div id="admin-product-list" style="text-align: left; max-height: 400px; overflow-y: auto;">
-            <p>Chargement...</p>
+
+        <div id="tab-commandes" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="text-align:left;">Historique des commandes</h3>
+                <button onclick="chargerCommandesAdmin()" style="width:auto; padding:5px 15px; font-size:0.8em;">🔄 Actualiser</button>
+            </div>
+            <div id="admin-orders-list" style="max-height: 600px; overflow-y: auto; margin-top:10px;">
+                <p>Chargement des commandes...</p>
+            </div>
         </div>
+
+        <div id="tab-messages" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="text-align:left;">Boîte de réception</h3>
+                <button onclick="chargerMessagesAdmin()" style="width:auto; padding:5px 15px; font-size:0.8em;">🔄 Actualiser</button>
+            </div>
+            <div id="admin-messages-list" style="max-height: 600px; overflow-y: auto; margin-top:10px;">
+                <p>Chargement des messages...</p>
+            </div>
+        </div>
+
     </div>
 
 <script src="script.js"></script>

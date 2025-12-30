@@ -583,3 +583,124 @@ function afficherBoutonsPayPal() {
 
     }).render('#paypal-button-container');
 }
+// --- 9. FONCTIONS ADMIN : ONGLETS & DONNÉES ---
+
+// A. GESTION DES ONGLETS
+function switchTab(tabId) {
+    // 1. Masquer tous les contenus
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    // 2. Désactiver tous les boutons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    // 3. Activer le bon contenu
+    document.getElementById(tabId).classList.add('active');
+    
+    // 4. Activer le bon bouton (astuce pour retrouver le bouton cliqué)
+    event.currentTarget.classList.add('active');
+
+    // 5. Charger les données si nécessaire
+    if (tabId === 'tab-commandes') chargerCommandesAdmin();
+    if (tabId === 'tab-messages') chargerMessagesAdmin();
+}
+
+// B. CHARGER LES COMMANDES (Triées par date récente)
+async function chargerCommandesAdmin() {
+    const container = document.getElementById('admin-orders-list');
+    if(!container) return;
+
+    container.innerHTML = "<p>Chargement...</p>";
+
+    // Vérification admin avant appel (optionnel mais propre)
+    if (!await verifierAdmin()) return;
+
+    const { data: commandes, error } = await supabaseClient
+        .from('commandes')
+        .select('*')
+        .order('created_at', { ascending: false }); // Du plus récent au plus vieux
+
+    if (error) {
+        container.innerHTML = "<p style='color:red'>Erreur : " + error.message + "</p>";
+    } else {
+        container.innerHTML = "";
+        if (commandes.length === 0) {
+            container.innerHTML = "<p>Aucune commande pour le moment.</p>";
+            return;
+        }
+
+        commandes.forEach(cmd => {
+            // Mise en forme de la date
+            const date = new Date(cmd.created_at).toLocaleString('fr-FR');
+            
+            // Calcul couleur badge statut
+            let badgeColor = '#999'; // Gris (En attente)
+            if(cmd.statut.includes('Payé')) badgeColor = '#28a745'; // Vert
+            
+            // Liste des articles
+            let articlesHtml = "";
+            if (Array.isArray(cmd.articles)) {
+                articlesHtml = cmd.articles.map(a => `<li>${a.titre} (${a.prix}€)</li>`).join('');
+            }
+
+            container.innerHTML += `
+                <div class="admin-card" style="border-left-color: ${badgeColor};">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>Date : ${date}</strong>
+                        <span class="status-badge" style="background:${badgeColor}">${cmd.statut}</span>
+                    </div>
+                    <p style="margin:5px 0;"><strong>Client :</strong> ${cmd.client_email}</p>
+                    <p style="margin:5px 0; color:#555;"><strong>Total :</strong> ${cmd.total} €</p>
+                    
+                    <details style="margin-top:10px; cursor:pointer;">
+                        <summary>Voir le détail des articles</summary>
+                        <ul style="font-size:0.9em; padding-left:20px; color:#444;">${articlesHtml}</ul>
+                    </details>
+                </div>`;
+        });
+    }
+}
+
+// C. CHARGER LES MESSAGES (CONTACT)
+async function chargerMessagesAdmin() {
+    const container = document.getElementById('admin-messages-list');
+    if(!container) return;
+
+    container.innerHTML = "<p>Chargement...</p>";
+
+    if (!await verifierAdmin()) return;
+
+    const { data: messages, error } = await supabaseClient
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        container.innerHTML = "<p style='color:red'>Erreur : " + error.message + "</p>";
+    } else {
+        container.innerHTML = "";
+        if (messages.length === 0) {
+            container.innerHTML = "<p>Boîte de réception vide.</p>";
+            return;
+        }
+
+        messages.forEach(msg => {
+            const date = new Date(msg.created_at).toLocaleString('fr-FR');
+            
+            container.innerHTML += `
+                <div class="admin-card" style="border-left-color: #007bff;">
+                    <div style="display:flex; justify-content:space-between; color:#777; font-size:0.9em;">
+                        <span>${date}</span>
+                        <span>De : <strong>${msg.nom}</strong></span>
+                    </div>
+                    <h4 style="margin: 5px 0;">${msg.objet || 'Sans objet'}</h4>
+                    <p style="font-style:italic; color:#555; background:#f1f1f1; padding:10px; border-radius:4px;">
+                        "${msg.contenu}"
+                    </p>
+                    <div style="text-align:right;">
+                        <a href="mailto:${msg.email}" style="text-decoration:none; color:blue; font-weight:bold;">
+                            📧 Répondre (${msg.email})
+                        </a>
+                    </div>
+                </div>`;
+        });
+    }
+}
