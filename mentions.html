@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentions Légales & CGV - Atelier OneTwoTree</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR" defer></script> <style>
+        /* Style spécifique pour rendre le texte juridique lisible */
+        .legal-page {
+            max-width: 900px;
+            margin: 40px auto;
+            background: rgba(255, 255, 255, 0.95); /* Fond blanc quasi opaque */
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            color: #333;
+            line-height: 1.6;
+            font-family: sans-serif; /* Plus lisible que la police titre */
+        }
+
+        .legal-page h1 {
+            color: #5a4a42;
+            text-align: center;
+            border-bottom: 2px solid #8b7355;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .legal-page h2 {
+            color: #8b7355;
+            margin-top: 30px;
+            border-left: 5px solid #5a4a42;
+            padding-left: 15px;
+        }
+
+        .legal-page h3 {
+            color: #5a4a42;
+            margin-top: 20px;
+        }
+
+        .legal-page ul {
+            margin-left: 20px;
+        }
+        
+        .alert-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="main-nav">
+        <ul>
+            <li class="dropdown">
+                <a href="#">Catalogue</a>
+                <div class="dropdown-content">
+                    <a href="themes.html">Thèmes / Univers</a>
+                    <a href="index.html">Tout le catalogue</a>
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="objetpersonnalisable.html">Objets personnalisables</a>
+                <div class="dropdown-content">
+                    <a href="objetpersonnalisable.html?categorie=Sous-Bock">Sous-Bock</a>
+                    <a href="objetpersonnalisable.html?categorie=Plateaux">Plateaux</a>
+                    <a href="objetpersonnalisable.html?categorie=Calendriers">Calendriers</a>
+                    <a href="objetpersonnalisable.html?categorie=Sur-Mesure">À la demande</a>
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="#">À Propos</a>
+                <div class="dropdown-content">
+                    <a href="apropos.html">L'Artisan</a>
+                    <a href="contact.html">Nous contacter</a>
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="#" id="auth-link" onclick="ouvrirProfil()">Mon Espace</a>
+                <div class="dropdown-content">
+                    <a href="#" onclick="toggleAuthModal()" id="login-btn-text">Se connecter / S'inscrire</a>
+                    <a href="#" onclick="ouvrirProfil()" id="profile-btn-text">Mon Profil</a>
+                    <a href="#" onclick="toggleOrders()">Mes commandes</a>
+                    <a href="admin.html" style="font-size:0.8em; color:gray;">Admin</a>
+                    <a href="#" onclick="logoutClient()" id="logout-btn" style="display:none; color:red;">Se déconnecter</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="legal-page">
+        <h1>Mentions Légales & Conditions Générales de Vente (CGV)</h1>
+
+        <p><em>Dernière mise à jour : [DATE D'AUJOURD'HUI]</em></p>
+
+        <h2>1. Mentions Légales</h2>
+        
+        <h3>Éditeur du site</h3>
+        <p>Le site <strong>Atelier OneTwoTree</strong> est édité par :</p>
+        <ul>
+            <li><strong>Nom de l'entreprise / Entrepreneur :</strong> [TON NOM ET PRÉNOM OU NOM SOCIÉTÉ]</li>
+            <li><strong>Adresse :</strong> [TON ADRESSE POSTALE COMPLÈTE]</li>
+            <li><strong>Email de contact :</strong> [TON EMAIL DE CONTACT]</li>
+            <li><strong>Numéro de SIRET :</strong> [TON NUMÉRO SIRET]</li>
+            <li><strong>Directeur de la publication :</strong> [TON NOM]</li>
+        </ul>
+
+        <h3>Hébergement</h3>
+        <p>Ce site est hébergé par :</p>
+        <p>
+            <strong>Netlify, Inc.</strong><br>
+            44 Montgomery Street, Suite 300<br>
+            San Francisco, California 94104, USA.<br>
+            Site web : www.netlify.com
+        </p>
+
+        <h2>2. Conditions Générales de Vente (CGV)</h2>
+
+        <h3>Article 1 - Objet</h3>
+        <p>Les présentes conditions régissent les ventes de créations artisanales (bois, céramique, textile, etc.) effectuées par l'Atelier OneTwoTree.</p>
+
+        <h3>Article 2 - Prix et Paiement</h3>
+        <p>Les prix sont indiqués en euros (€). L'Atelier OneTwoTree se réserve le droit de modifier ses prix à tout moment, mais le produit sera facturé sur la base du tarif en vigueur au moment de la validation de la commande.</p>
+        <p>Le paiement s'effectue via la plateforme sécurisée <strong>PayPal</strong>. Aucune donnée bancaire ne transite ni n'est stockée sur notre site.</p>
+
+        <h3>Article 3 - Fabrication et Livraison</h3>
+        <p>Nos produits sont fabriqués de manière artisanale. Les délais de fabrication peuvent varier selon la commande. La livraison est effectuée à l'adresse indiquée lors de la commande.</p>
+
+        <div class="alert-box">
+            <h3>Article 4 - Droit de Rétractation et Exceptions</h3>
+            <p>Conformément à l'article L221-18 du Code de la Consommation, le client dispose d'un délai de 14 jours pour exercer son droit de rétractation.</p>
+            <p><strong>⚠️ EXCEPTION IMPORTANTE :</strong></p>
+            <p>Conformément à l'article L221-28 du Code de la consommation, <strong>le droit de rétractation ne s'applique pas aux produits confectionnés selon les spécifications du consommateur ou nettement personnalisés</strong> (exemples : gravure d'un prénom, dimensions sur-mesure, date spécifique, etc.).</p>
+            <p>Par conséquent, aucune commande d'objet personnalisé ne pourra être remboursée ou échangée une fois la fabrication lancée, sauf en cas de défaut avéré du produit.</p>
+        </div>
+
+        <h2>3. Politique de Confidentialité (Données Personnelles)</h2>
+        <p>L'Atelier OneTwoTree respecte votre vie privée.</p>
+        
+        <h3>Données collectées</h3>
+        <ul>
+            <li><strong>Compte Client :</strong> Pour gérer votre espace, nous utilisons votre adresse email via le service Supabase.</li>
+            <li><strong>Commande :</strong> Pour la livraison, nous recevons les informations transmises par PayPal (Nom, Adresse).</li>
+        </ul>
+
+        <h3>Utilisation des données</h3>
+        <p>Vos données ne sont utilisées que pour le traitement de vos commandes et la gestion de votre compte. Elles ne sont <strong>jamais revendues</strong> à des tiers.</p>
+        
+        <h3>Vos droits</h3>
+        <p>Vous pouvez à tout moment demander la modification ou la suppression de vos données en nous contactant à : [TON EMAIL].</p>
+
+    </div>
+
+    <div id="cart-modal" class="modal" style="display:none;">
+        <h3>Mon Panier</h3>
+        <table class="cart-table"><tbody id="cart-items"></tbody></table>
+        <p style="text-align:right;">Total: <strong><span id="cart-total">0</span> €</strong></p>
+        <div id="paypal-button-container"></div>
+        <button onclick="toggleCart()">Fermer</button>
+    </div>
+
+    <div id="auth-modal" class="modal" style="display:none;">
+        <h3>Connexion / Inscription</h3>
+        <form id="login-form">
+            <input type="email" id="email" placeholder="Email" required><br>
+            <input type="password" id="password" placeholder="Mot de passe" required><br>
+            <button type="submit">Se connecter</button>
+            <button type="button" onclick="signUp()">Créer un compte</button>
+        </form>
+        <p id="auth-msg"></p>
+        <button onclick="toggleAuthModal()">Fermer</button>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
