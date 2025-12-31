@@ -14,11 +14,46 @@ if (window.supabase) {
 }
 
 // --- 1.5. UTILITAIRES ADMIN ---
-async function verifierAdmin() {
-    if (!supabaseClient) return false;
-    
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    return session && session.user.email === ADMIN_EMAIL;
+async function verificationAdmin() {
+    console.log("--- Démarrage vérification Admin ---");
+
+    // 1. Est-ce qu'un utilisateur est connecté ?
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
+    if (authError || !user) {
+        console.log("Pas d'utilisateur connecté. Redirection.");
+        window.location.href = 'index.html'; 
+        return;
+    }
+
+    console.log("Utilisateur identifié :", user.email);
+
+    // 2. LE POINT CRUCIAL : On va lire le rôle dans la table 'profiles'
+    // On demande spécifiquement la colonne 'role' pour l'ID de l'utilisateur
+    const { data: profile, error: dbError } = await supabaseClient
+        .from('profils')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    // S'il y a une erreur de lecture ou si le profil n'existe pas
+    if (dbError) {
+        console.error("Erreur lecture base de données :", dbError);
+        alert("Erreur de droits. Vérifiez la console.");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // 3. Vérification finale
+    console.log("Rôle trouvé dans la base :", profile.role);
+
+    if (profile.role !== 'admin') {
+        console.log("Accès refusé. Ce n'est pas un admin.");
+        window.location.href = 'index.html'; // Ouste !
+    } else {
+        console.log("✅ Accès autorisé. Bienvenue Chef.");
+        // Tout est bon, on reste sur la page
+    }
 }
 
 // --- 2. GESTION DU PANIER (LOCAL) ---

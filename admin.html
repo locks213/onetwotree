@@ -196,27 +196,21 @@
                 document.getElementById('dashboard-section').classList.add('hidden');
                 // On lève le rideau pour qu'il puisse se connecter
                 body.style.display = 'block';
+                return;
             }
             
-            // CAS B : Quelqu'un est connecté, mais ce n'est PAS le chef
-            // (La variable ADMIN_EMAIL vient de script.js)
-            else if (session.user.email !== ADMIN_EMAIL) {
-                // On ne lève PAS le rideau. On redirige direct.
-                window.location.href = "index.html";
-            }
+            // CAS B : Quelqu'un est connecté, vérifier le rôle
+            await verificationAdmin();
             
-            // CAS C : C'est le chef (Toi) !
-            else {
-                // On affiche le tableau de bord
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
-                
-                // On charge les données
-                if(typeof chargerListeAdmin === 'function') chargerListeAdmin();
-                
-                // On lève le rideau
-                body.style.display = 'block';
-            }
+            // Si on arrive ici, c'est que l'utilisateur est admin
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            
+            // On charge les données
+            if(typeof chargerListeAdmin === 'function') chargerListeAdmin();
+            
+            // On lève le rideau
+            body.style.display = 'block';
         });
 
         // Fonction de connexion (reste inchangée)
