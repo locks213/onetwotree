@@ -269,6 +269,10 @@ body {
         flex: 1 1 40%; /* 2 boutons par ligne */
         text-align: center;
     }
+    /* On cache le logo fixe pour laisser la place au panier */
+    .fixed-logo {
+        display: none !important;
+    }
     
     /* 7. POLICE D'ÉCRITURE */
     /* Papyrus n'existe pas sur Android/iOS. On met une police de secours lisible */
