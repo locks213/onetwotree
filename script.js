@@ -978,7 +978,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 2. CRÉATION DU BANDEAU (Code inchangé) ---
     const bandeau = document.createElement('div');
     
-    bandeau.style.backgroundColor = "#e7a043ff"; 
+    bandeau.style.backgroundColor = "rgba(219, 168, 57, 0.73)"; 
     bandeau.style.color = "#fff";              
     bandeau.style.textAlign = "center";
     bandeau.style.padding = "10px";
