@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Objets Personnalisables - L'Atelier</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR"></script>
+
+<style>
+        /* Style de l'entête spécifique (inchangé) */
+        .custom-header {
+            background-color: #f4e1d2; 
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 2px solid #8b7355;
+            position: relative; 
+            z-index: 2; /* Pour passer au-dessus du calque de fond */
+        }
+
+        /* --- LE FOND MAGIQUE PLEIN ÉCRAN --- */
+        body::before {
+            content: "";
+            position: fixed; /* Reste fixe même quand on scrolle */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* Ton image */
+            background-image: url('img/Objets/lifetree.png'); /* ⚠️ Vérifie le nom */
+            
+            /* Réglages */
+            background-repeat: no-repeat; 
+            background-position: center;
+            background-size: cover; 
+
+            /* Transparence */
+            opacity: 0.15; /* Ajuste ici ! */
+            
+            /* On le place entre le bois (body) et le contenu */
+            z-index: -1; 
+            pointer-events: none; /* Permet de cliquer à travers sans souci */
+        }
+        
+        /* Petite astuce : on rend la vitrine un peu plus transparente 
+           pour bien voir le nouveau fond à travers */
+        .showcase {
+            background: rgba(255, 255, 255, 0.2) !important; 
+            position: relative;
+            z-index: 1;
+        }
+        /* --- STYLE DES ONGLETS DE CATÉGORIES --- */
+        .sub-nav-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Pour que ça passe sur mobile */
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.3); /* Légèrement blanc pour détacher du fond */
+            border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+            position: relative;
+            z-index: 2; /* Pour être cliquable au-dessus du fond */
+        }
+
+        .sub-nav-btn {
+            text-decoration: none;
+            color: #5a4a42;
+            font-family: sans-serif; /* Plus lisible pour des boutons */
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid #8b7355;
+            border-radius: 30px; /* Forme arrondie "pilule" */
+            background-color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        /* Effet au survol */
+        .sub-nav-btn:hover {
+            background-color: #8b7355;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Onglet ACTIF (celui sélectionné) */
+        .sub-nav-btn.active {
+            background-color: #5a4a42; /* Marron foncé */
+            color: white;
+            border-color: #5a4a42;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="index.html">Accueil</a></li>
+            <li class="dropdown">
+                <a href="#">Catalogue</a>
+                <div class="dropdown-content">
+                    <a href="themes.html">Thèmes / Univers</a>
+                    <a href="index.html">Tout le catalogue</a>
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="objetpersonnalisable.html">Objets personnalisables</a>
+                <div class="dropdown-content">
+                    <a href="objetpersonnalisable.html?categorie=Sous-Bock">Sous-Bock</a>
+                    <a href="objetpersonnalisable.html?categorie=Plateaux">Plateaux</a>
+                    <a href="objetpersonnalisable.html?categorie=Calendriers">Calendriers</a>
+                    <a href="objetpersonnalisable.html?categorie=Sur-Mesure">À la demande</a>
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="#" id="auth-link">Mon Espace</a>
+                <div class="dropdown-content">
+                    <a href="index.html">Connexion</a>
+                    <a href="admin.html">Admin</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="custom-header">
+        <h1 id="page-title">Objets Personnalisables</h1>
+        <p id="page-desc">Choisissez un support et nous le personnalisons pour vous.</p>
+    </header>
+    <div class="sub-nav-container">
+        <a href="objetpersonnalisable.html" class="sub-nav-btn" id="tab-tout">Tout voir</a>
+        
+        <a href="?categorie=Sous-Bock" class="sub-nav-btn" id="tab-Sous-Bock">Sous-Bock</a>
+        <a href="?categorie=Plateaux" class="sub-nav-btn" id="tab-Plateaux">Plateaux</a>
+        <a href="?categorie=Calendriers" class="sub-nav-btn" id="tab-Calendriers">Calendriers</a>
+        <a href="?categorie=Sur-Mesure" class="sub-nav-btn" id="tab-Sur-Mesure">À la demande</a>
+    </div>
+
+    <main class="showcase">
+        <button id="cart-btn" onclick="toggleCart()">
+            Panier (<span id="cart-count">0</span>)
+        </button>
+
+        <div class="gallery-grid" id="gallery-container">
+            <p>Chargement des objets...</p>
+        </div>   
+    </main>
+
+    <div class="fixed-logo">
+        <img src="img/logo.jpg" alt="Logo Atelier">
+    </div>
+
+    <div id="cart-modal" class="modal" style="display:none;">
+        <h3>Mon Panier</h3>
+        <table class="cart-table"><tbody id="cart-items"></tbody></table>
+        <p style="text-align:right;">Total: <strong><span id="cart-total">0</span> €</strong></p>
+        <div id="paypal-button-container"></div>
+        <button onclick="viderPanier()" class="btn-secondary">Vider</button>
+        <button onclick="toggleCart()" style="width:100%; margin-top:5px;">Fermer</button>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        window.onload = function() {
+            // 1. Initialiser le panier et l'auth
+            mettreAJourPanierAffichage();
+            verificationSession();
+
+            // 2. Détecter si on a cliqué sur un lien spécifique
+            const urlParams = new URLSearchParams(window.location.search);
+            const categorieDemandee = urlParams.get('categorie');
+
+            // 3. Charger le titre et les produits
+            if (categorieDemandee) {
+                document.getElementById('page-title').innerText = "Nos " + categorieDemandee;
+                document.getElementById('page-desc').innerText = "Découvrez nos modèles de " + categorieDemandee.toLowerCase() + " à personnaliser.";
+                
+                // On appelle ta fonction existante en filtrant !
+                chargerVitrine(categorieDemandee);
+            } else {
+                // Si on arrive sur la page sans cliquer sur un sous-menu
+                document.getElementById('page-title').innerText = "L'Espace Sur Mesure";
+                // Ici, on pourrait charger un mélange, ou rien, ou une intro.
+                // Pour l'instant, chargeons tout ce qui est 'Sur Mesure' si tu veux, 
+                // mais ta fonction 'chargerVitrine' actuelle ne sait faire que "Tout" ou "1 catégorie".
+                // Affichons un message d'accueil simple :
+                document.getElementById('gallery-container').innerHTML = 
+                    "<p>Sélectionnez une catégorie dans le menu pour voir nos supports (Sous-Bock, Plateaux...).</p>";
+            }
+        };
+    </script>
+</body>
+</html>
