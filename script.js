@@ -56,6 +56,27 @@ async function verificationAdmin() {
     }
 }
 
+// --- AJOUTER CECI DANS SCRIPT.JS (Section 1.5) ---
+
+async function verifierAdmin() {
+    // 1. Vérifier la session
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (!session) return false; // Pas connecté -> Faux
+
+    // 2. Vérifier le rôle dans la table profils
+    const { data: profile, error } = await supabaseClient
+        .from('profils')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+    if (error || !profile) return false; // Erreur ou pas de profil -> Faux
+
+    // 3. Renvoie VRAI si admin, sinon FAUX
+    return profile.role === 'admin';
+}
+
 // --- 2. GESTION DU PANIER (LOCAL) ---
 let panier = JSON.parse(localStorage.getItem('monPanier')) || [];
 
