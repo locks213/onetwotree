@@ -221,14 +221,22 @@ body {
         grid-template-columns: 1fr; /* 1 seule colonne (grosse image) */
     }
 
-    /* 5. LES MODALES (Panier, Connexion, Profil) */
+    /* 5. LES MODALES (Panier, Connexion, Profil) - VERSION CORRIGÉE */
     .modal {
-        width: 90% !important; /* Prend presque tout l'écran */
-        left: 5% !important;   /* Centré (5% marge gauche) */
-        top: 10px !important;  /* Collé en haut */
-        right: auto !important;
-        max-height: 90vh;      /* Pour scroller si c'est trop long */
-        overflow-y: auto;
+        position: fixed;       /* Reste fixe */
+        width: 85% !important; /* Un peu moins large pour voir les bords */
+        
+        /* Technique pro pour centrer parfaitement : */
+        left: 50% !important;  
+        transform: translateX(-50%); 
+        
+        top: 80px !important;  /* On laisse de l'espace en haut (on voit le header) */
+        max-height: 70vh;      /* Hauteur max : 70% de l'écran (pour ne pas toucher le bas) */
+        
+        overflow-y: auto;      /* Scroll intérieur si la liste est longue */
+        border-radius: 12px;   /* Bords bien arrondis */
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* Grosse ombre pour le relief */
+        z-index: 10001;        /* Au-dessus de tout, même du bandeau promo */
     }
     
     /* Le bouton panier flottant */
