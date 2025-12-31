@@ -239,12 +239,25 @@ body {
         z-index: 10001;        /* Au-dessus de tout, même du bandeau promo */
     }
     
-    /* Le bouton panier flottant */
+    /* Le bouton panier flottant - VERSION DISCRÈTE */
     #cart-btn {
-        top: auto;
-        bottom: 20px; /* On le met en bas à gauche, plus facile au pouce */
-        left: 20px;
-        right: auto;
+        /* On annule la position ordinateur (souvent en haut) */
+        top: auto !important;
+        left: auto !important;
+        
+        /* On le place en bas à droite (Zone du pouce) */
+        bottom: 20px !important; 
+        right: 20px !important;
+        
+        /* On le rend compact */
+        width: auto !important;       /* Il prend juste la taille du texte */
+        padding: 10px 20px !important; /* Marges internes réduites */
+        font-size: 0.9em !important;   /* Texte un peu plus petit */
+        
+        /* Style visuel */
+        border-radius: 50px !important; /* Forme de pilule bien ronde */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; /* Ombre pour qu'il flotte */
+        z-index: 10000; /* Toujours visible */
     }
     
     /* 6. PAGE OBJET PERSO */
