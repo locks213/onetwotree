@@ -61,7 +61,7 @@
         .delete-btn { color: red; cursor: pointer; font-size: 0.9em; font-weight: bold; }
     </style>
 </head>
-<body>
+<body id="page-content" style="display:none;">
 
     <div id="login-section" class="admin-container">
         <h2>Espace Artisan</h2>
@@ -168,77 +168,63 @@
     </div>
 
 <script src="script.js"></script>
+<script>
+        // --- CONFIG ---
+        // On n'a PLUS besoin de déclarer ADMIN_EMAIL ici, car il est déjà dans script.js !
 
-    <script>
-        // --- 1. RÉCUPÉRATION ---
-        // Utilisation directe de supabaseClient défini dans script.js
-        
-        // --- 2. CONFIG ADMIN ---
-        // METS TON EMAIL ICI
-        const ADMIN_EMAIL = 'xavier.frassinelli@gmail.com'; 
-
-        // --- 3. FONCTIONS ---
-        async function loginAdmin(event) {
-            event.preventDefault(); 
-            
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
-            const msgDiv = document.getElementById('login-msg');
-
-            msgDiv.innerText = "Connexion en cours...";
-
-            // Vérification de sécurité locale
-            if (email !== ADMIN_EMAIL) {
-                msgDiv.innerText = "Accès refusé : Vous n'êtes pas l'administrateur.";
-                return;
-            }
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ 
-                email: email, 
-                password: password 
-            });
-
-            if (error) {
-                msgDiv.innerText = "Erreur : " + error.message;
-            } else {
-                msgDiv.innerText = "Connexion réussie !";
-                location.reload(); 
-            }
-        }
-
-        // --- 4. DÉMARRAGE ---
+        // --- DEMARRAGE STRICT ---
         window.addEventListener('load', async () => {
-            // Vérifie la session
+            const body = document.getElementById('page-content');
+            
+            // 1. On interroge Supabase
             const { data: { session } } = await supabaseClient.auth.getSession();
 
-            // Si connecté avec le BON email
-            if (session && session.user.email === ADMIN_EMAIL) {
+            // CAS A : Personne n'est connecté
+            if (!session) {
+                // On affiche le formulaire de login
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('dashboard-section').classList.add('hidden');
+                // On lève le rideau pour qu'il puisse se connecter
+                body.style.display = 'block';
+            }
+            
+            // CAS B : Quelqu'un est connecté, mais ce n'est PAS le chef
+            // (La variable ADMIN_EMAIL vient de script.js)
+            else if (session.user.email !== ADMIN_EMAIL) {
+                // On ne lève PAS le rideau. On redirige direct.
+                window.location.href = "index.html";
+            }
+            
+            // CAS C : C'est le chef (Toi) !
+            else {
+                // On affiche le tableau de bord
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('dashboard-section').classList.remove('hidden');
                 
-                // On charge la liste (fonction venant de script.js)
-                if(typeof chargerListeAdmin === 'function') {
-                    chargerListeAdmin();
-                } else {
-                    // Petite sécurité si script.js charge doucement
-                    setTimeout(() => { 
-                        if(typeof chargerListeAdmin === 'function') chargerListeAdmin(); 
-                    }, 500);
-                }
-
-            } else {
-                // Si pas admin, on affiche le login
-                document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('dashboard-section').classList.add('hidden');
+                // On charge les données
+                if(typeof chargerListeAdmin === 'function') chargerListeAdmin();
                 
-                // Sécurité : Déconnexion forcée si un client "normal" essaie d'accéder
-                if (session && session.user.email !== ADMIN_EMAIL) {
-                    console.log("Intrus détecté, déconnexion...");
-                    await supabaseClient.auth.signOut();
-                }
+                // On lève le rideau
+                body.style.display = 'block';
             }
         });
-    </script>
 
+        // Fonction de connexion (reste inchangée)
+        async function loginAdmin(event) {
+            event.preventDefault(); 
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+                email: email, password: password 
+            });
+
+            if (error) {
+                document.getElementById('login-msg').innerText = "Erreur : " + error.message;
+            } else {
+                location.reload(); // On recharge la page pour relancer la vérification stricte
+            }
+        }
+    </script>
 </body>
-</html>
+</html> 
