@@ -951,3 +951,45 @@ if (inputEmail) {
         }
     });
 }
+
+// --- FONCTION : BANDEAU D'ANNONCE GLOBAL ---
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // Si on est sur la page Admin, on n'affiche pas le bandeau
+    if (window.location.pathname.includes('admin.html')) return;
+
+    // --- 1. PRÉPARATION DU SANDWICH ---
+    
+    // Image de Gauche (Normale)
+    // margin-right : pour ne pas coller le texte
+    const imgGauche = '<img src="img/fioriture_2.png" alt="" style="height:25px; vertical-align:left; margin-right:10px; margin-bottom:3px;">';
+    
+    // Image de Droite (Miroir)
+    // margin-left : pour ne pas coller le texte
+    // transform: scaleX(-1) : L'astuce magique pour retourner l'image !
+    const imgDroite = '<img src="img/fioriture_2.png" alt="" style="height:25px; vertical-align:right; margin-left:10px; margin-bottom:3px; transform: scaleX(-1);">';
+    
+    // Le Texte
+    const message = "One Two Tree";
+
+    // On assemble le tout
+    const contenuFinal = imgGauche + message + imgDroite;
+
+    // --- 2. CRÉATION DU BANDEAU (Code inchangé) ---
+    const bandeau = document.createElement('div');
+    
+    bandeau.style.backgroundColor = "#e7a043ff"; 
+    bandeau.style.color = "#fff";              
+    bandeau.style.textAlign = "center";
+    bandeau.style.padding = "10px";
+    bandeau.style.fontSize = "1.5em";
+    bandeau.style.fontWeight = "bold";
+    bandeau.style.position = "relative";
+    bandeau.style.zIndex = "9999";             
+    bandeau.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+    
+    // On injecte le sandwich
+    bandeau.innerHTML = contenuFinal;
+
+    document.body.prepend(bandeau);
+});
