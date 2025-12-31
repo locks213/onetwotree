@@ -962,12 +962,12 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Image de Gauche (Normale)
     // margin-right : pour ne pas coller le texte
-    const imgGauche = '<img src="img/fioriture_2.png" alt="" style="height:25px; vertical-align:left; margin-right:10px; margin-bottom:3px;">';
+    const imgGauche = '<img src="img/fioriture_2.png" class="deco-branche"alt="" style="height:25px; vertical-align:left; margin-right:10px; margin-bottom:3px;">';
     
     // Image de Droite (Miroir)
     // margin-left : pour ne pas coller le texte
     // transform: scaleX(-1) : L'astuce magique pour retourner l'image !
-    const imgDroite = '<img src="img/fioriture_2.png" alt="" style="height:25px; vertical-align:right; margin-left:10px; margin-bottom:3px; transform: scaleX(-1);">';
+    const imgDroite = '<img src="img/fioriture_2.png" class="deco-branche"alt="" style="height:25px; vertical-align:right; margin-left:10px; margin-bottom:3px; transform: scaleX(-1);">';
     
     // Le Texte
     const message = "One Two Tree";

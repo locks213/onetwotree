@@ -178,3 +178,81 @@ body {
 .theme-card:hover img {
     transform: scale(1.1); /* Zoom léger sur l'image */
 }
+
+/* =========================================
+   VERSION MOBILE (SMARTPHONE & TABLETTE)
+   ========================================= */
+@media screen and (max-width: 768px) {
+
+    /* 1. LE BANDEAU D'ANNONCE */
+    /* On cache les branches pour gagner de la place */
+    .deco-branche {
+        display: none !important;
+    }
+    
+    /* 2. L'ENTÊTE (Header) */
+    /* On réduit la hauteur car 33vh c'est trop grand sur mobile */
+    .main-header {
+        height: 20vh;
+    }
+
+    /* 3. LE MENU (Navigation) */
+    /* On passe de horizontal à vertical */
+    .main-nav ul {
+        flex-direction: column;
+        padding: 0;
+    }
+    .main-nav li {
+        width: 100%;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+    .main-nav a {
+        padding: 10px; /* Moins épais */
+        font-size: 1em;
+    }
+
+    /* 4. LA VITRINE */
+    .showcase {
+        padding: 20px 10px; /* Marges réduites */
+    }
+    .gallery-grid {
+        /* On force 1 colonne ou 2 petites colonnes selon le goût */
+        grid-template-columns: 1fr; /* 1 seule colonne (grosse image) */
+    }
+
+    /* 5. LES MODALES (Panier, Connexion, Profil) */
+    .modal {
+        width: 90% !important; /* Prend presque tout l'écran */
+        left: 5% !important;   /* Centré (5% marge gauche) */
+        top: 10px !important;  /* Collé en haut */
+        right: auto !important;
+        max-height: 90vh;      /* Pour scroller si c'est trop long */
+        overflow-y: auto;
+    }
+    
+    /* Le bouton panier flottant */
+    #cart-btn {
+        top: auto;
+        bottom: 20px; /* On le met en bas à gauche, plus facile au pouce */
+        left: 20px;
+        right: auto;
+    }
+    
+    /* 6. PAGE OBJET PERSO */
+    .custom-header h1 { font-size: 1.5em; }
+    .sub-nav-container { gap: 5px; padding: 10px; }
+    .sub-nav-btn { 
+        font-size: 0.8em; 
+        padding: 8px 12px;
+        flex: 1 1 40%; /* 2 boutons par ligne */
+        text-align: center;
+    }
+    
+    /* 7. POLICE D'ÉCRITURE */
+    /* Papyrus n'existe pas sur Android/iOS. On met une police de secours lisible */
+    body {
+        font-family: 'Times New Roman', serif; 
+        /* Ou importe une Google Font si tu veux mieux */
+    }
+}
