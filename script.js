@@ -1034,11 +1034,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 2. CRÉATION DU BANDEAU (Code inchangé) ---
     const bandeau = document.createElement('div');
     
-    bandeau.style.backgroundColor = "rgba(219, 168, 57, 0.73)"; 
+    bandeau.style.backgroundColor = "rgba(121, 70, 32, 0.73)"; 
     bandeau.style.color = "#fff";              
     bandeau.style.textAlign = "center";
     bandeau.style.padding = "10px";
-    bandeau.style.fontSize = "1.5em";
+    bandeau.style.fontSize = "2em";
     bandeau.style.fontWeight = "bold";
     bandeau.style.position = "relative";
     bandeau.style.zIndex = "9999";             
