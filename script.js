@@ -443,6 +443,9 @@ async function chargerVitrine(filtre = "Tout") {
     const container = document.getElementById('gallery-container');
     if (!container) return; 
 
+    // Afficher la vitrine
+    container.style.display = 'grid';
+
     // Petit message de chargement pour que l'utilisateur sache qu'il se passe quelque chose
     container.innerHTML = "<p style='text-align:center; width:100%;'>Recherche en cours...</p>";
 
@@ -610,11 +613,17 @@ async function supprimerProduit(id) {
 
 // --- 7. DÉMARRAGE ---
 window.onload = function() {
+    // Créer et ajouter le logo flottant
+    const logoDiv = document.createElement('div');
+    logoDiv.className = 'fixed-logo';
+    logoDiv.innerHTML = '<img src="img/logo.jpg" alt="Logo Atelier">';
+    document.body.appendChild(logoDiv);
+
     // 1. Initialiser l'affichage du panier au chargement
     mettreAJourPanierAffichage();
 
-    // 2. Lancement vitrine (si sur page d'accueil)
-    if(document.getElementById('gallery-container')) chargerVitrine();
+    // 2. Lancement vitrine (si sur page d'accueil, pas sur themes.html)
+    if(document.getElementById('gallery-container') && !document.querySelector('.themes-navigation')) chargerVitrine();
     
     // 3. Vérification Auth Client (partout)
     verificationSession();
