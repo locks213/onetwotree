@@ -1030,7 +1030,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const bandeau = document.createElement('div');
     
     bandeau.style.backgroundColor = "rgba(121, 70, 32, 0.73)"; 
-    bandeau.style.color = "#fff";              
+    bandeau.style.color = "#000000";              
     bandeau.style.textAlign = "center";
     bandeau.style.padding = "10px";
     bandeau.style.fontSize = "2em";
