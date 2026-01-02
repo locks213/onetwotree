@@ -1023,22 +1023,8 @@ document.addEventListener("DOMContentLoaded", function() {
     // Si on est sur la page Admin, on n'affiche pas le bandeau
     if (window.location.pathname.includes('admin.html')) return;
 
-    // --- 1. PRÉPARATION DU SANDWICH ---
-    
-    // Image de Gauche (Normale)
-    // margin-right : pour ne pas coller le texte
-    const imgGauche = '<img src="img/fioriture_2.png" class="deco-branche"alt="" style="height:25px; vertical-align:left; margin-right:10px; margin-bottom:3px;">';
-    
-    // Image de Droite (Miroir)
-    // margin-left : pour ne pas coller le texte
-    // transform: scaleX(-1) : L'astuce magique pour retourner l'image !
-    const imgDroite = '<img src="img/fioriture_2.png" class="deco-branche"alt="" style="height:25px; vertical-align:right; margin-left:10px; margin-bottom:3px; transform: scaleX(-1);">';
-    
     // Le Texte
-    const message = "One Two Tree";
-
-    // On assemble le tout
-    const contenuFinal = imgGauche + message + imgDroite;
+    const contenuFinal = "One Two Tree";
 
     // --- 2. CRÉATION DU BANDEAU (Code inchangé) ---
     const bandeau = document.createElement('div');
