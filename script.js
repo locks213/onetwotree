@@ -92,31 +92,24 @@ function toggleCart() {
     fermerToutesModalesSauf('cart-modal');
     
     if(modal) {
-        if (modal.style.display === 'none' || modal.style.display === '') {
-            modal.style.display = 'block';
-            
-            // --- AJOUT IMPORTANT ICI ---
-            // On attend un tout petit peu que la fenêtre s'ouvre pour dessiner les boutons
-            setTimeout(() => {
-                // On vide d'abord le conteneur pour ne pas avoir 2 boutons si on rouvre
-                const container = document.getElementById('paypal-button-container');
-                if(container) container.innerHTML = ""; 
-                
-                // On affiche les boutons si le panier n'est pas vide
-                if (panier.length > 0) {
-                    afficherBoutonsPayPal();
-                } else {
-                    if(container) container.innerHTML = "<p style='text-align:center; font-size:0.8em;'>Le panier est vide</p>";
-                }
-            }, 100); 
-            // ---------------------------
-
+        
+if (modal.style.display === 'none' || modal.style.display === '') {
+    modal.style.display = 'block';
+    
+    // On attend un peu plus longtemps (300ms au lieu de 100ms) 
+    // pour être sûr que la modale est visible
+    setTimeout(() => {
+        const mrSection = document.getElementById('mondial-relay-section');
+        if (panier.length > 0) {
+            if(mrSection) mrSection.style.display = 'block';
+            initialiserMondialRelay(); // Lancement du widget
+        }
+    }, 300); 
+} 
         } else {
             modal.style.display = 'none';
         }
     }
-}
-
 function mettreAJourPanierAffichage() {
     const tbody = document.getElementById('cart-items');
     const totalSpan = document.getElementById('cart-total');
@@ -226,7 +219,29 @@ async function payerPanier() {
         window.open(url, '_blank');
     }
 }
+let pointRelaisSelectionne = null;
 
+function initialiserMondialRelay() {
+    // Vérification que JQuery et le plugin sont chargés
+    if (typeof $ === 'undefined' || typeof $.fn.MR_ParcelShopPicker === 'undefined') {
+        console.error("Mondial Relay ou jQuery non chargé");
+        return;
+    }
+ColLivMod: "24R", // Correspond au mode Point Relais LCI
+    $("#Zone_Widget").MR_ParcelShopPicker({
+        Target: "#Target_PMR", 
+        Brand: "TTMRSDBX", // <--- TRÈS IMPORTANT : 2 ESPACES ICI (Total 8 caractères)
+        Country: "FR", 
+        PostCode: "75001", 
+        ColLivMod: "24R",  // Ajoutez le mode de livraison (24R = Point Relais)
+        NbResults: "7",
+        OnParcelShopSelected: (data) => {
+            pointRelaisSelectionne = data;
+            document.getElementById('Target_PMR').innerHTML = 
+                `✅ <b>Relais choisi :</b> ${data.Nom} (${data.CP})`;
+        }
+    });
+}
 
 // --- 3. HISTORIQUE & MODALES ---
 
@@ -673,7 +688,21 @@ function afficherBoutonsPayPal() {
                 // DIAGNOSTIC 2
                 alert("Étape 2 : Capture réussie ! On prépare la sauvegarde Supabase...");
                 console.log('PayPal Data:', orderData);
-
+// Dans onApprove de PayPal, lors de l'insert Supabase :
+const { error } = await supabaseClient.from('commandes').insert({
+    client_email: clientEmail,
+    user_id: userId,
+    articles: panier,
+    total: total,
+    statut: "Payé",
+    // AJOUT DE L'INFO RELAIS
+    point_relais: pointRelaisSelectionne ? {
+        id: pointRelaisSelectionne.ID,
+        nom: pointRelaisSelectionne.Nom,
+        ville: pointRelaisSelectionne.Ville,
+        cp: pointRelaisSelectionne.CP
+    } : "Livraison standard ou non choisi"
+});
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 
                 // Sécurisation de l'email (parfois PayPal ne le renvoie pas direct)

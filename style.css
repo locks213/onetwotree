@@ -319,3 +319,19 @@ body {
     opacity: 1;
     text-decoration: underline;
 }
+#Zone_Widget {
+    width: 100%;
+    min-height: 300px;
+    margin-top: 15px;
+}
+#Zone_Widget {
+    width: 100%;
+    min-height: 400px; /* Force l'affichage du widget */
+    margin-top: 15px;
+    border: 1px solid #ccc;
+}
+#Zone_Widget {
+    width: 100% !important;
+    min-height: 400px !important; /* Taille minimum requise pour la carte */
+    background: #f9f9f9; /* Permet de voir si la zone existe */
+}
