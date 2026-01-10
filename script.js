@@ -1088,17 +1088,28 @@ document.addEventListener("DOMContentLoaded", function() {
     document.body.prepend(bandeau);
 });
 
-// --- GESTION DU CLIC À L'EXTÉRIEUR ---
-window.addEventListener('click', function(event) {
+// --- GESTION DU CLIC À L'EXTÉRIEUR (VERSION ULTRA-SÉCURISÉE) ---
+window.addEventListener('mousedown', function(event) {
     const modal = document.getElementById('cart-modal');
     const btn = document.getElementById('cart-btn');
 
-    // Si le panier est ouvert...
-    if (modal && modal.style.display === 'block') {
-        
-        // ...et que le clic n'est NI dans le panier, NI sur le bouton "Panier"
-        if (!modal.contains(event.target) && !btn.contains(event.target)) {
-            toggleCart(); // On ferme le panier proprement
-        }
+    // On vérifie si le panier est affiché
+    if (!modal || modal.style.display !== 'block') return;
+
+    // Liste des classes et IDs qui appartiennent à Mondial Relay
+    // On ajoute 'MR-Widget', 'leaflet', et les sélecteurs de recherche
+    const isMondialRelay = event.target.closest('#Zone_Widget') || 
+                           event.target.closest('.MR-Widget') || 
+                           event.target.closest('.leaflet-container') ||
+                           event.target.closest('.MR-Search');
+
+    // On vérifie si on a cliqué dans le modal ou sur le bouton Panier
+    const isInsideModal = modal.contains(event.target);
+    const isCartBtn = btn.contains(event.target);
+
+    // LOGIQUE : On ferme UNIQUEMENT si le clic est en dehors de TOUT
+    if (!isInsideModal && !isCartBtn && !isMondialRelay) {
+        console.log("Clic extérieur détecté : Fermeture du panier");
+        modal.style.display = 'none';
     }
 });
