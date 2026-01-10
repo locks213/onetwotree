@@ -237,7 +237,9 @@ body {
         border-radius: 12px;   /* Bords bien arrondis */
         box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* Grosse ombre pour le relief */
         z-index: 10001;        /* Au-dessus de tout, même du bandeau promo */
+
     }
+
     
     /* Le bouton panier flottant - VERSION DISCRÈTE */
     #cart-btn {
@@ -369,4 +371,76 @@ body {
     width: 400px; 
     max-width: 95%;
     z-index: 2000; 
+}
+
+/* --- STRUCTURE DE L'ESPACE CLIENT --- */
+#profile-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5); /* Fond assombri */
+}
+
+#profile-modal .modal-content {
+    background-color: #fff;
+    position: absolute;
+    top: 50px; /* On le remonte un peu (de 100px à 50px) pour gagner de la place */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    
+    /* --- AJOUTS POUR LE BAS MASQUÉ --- */
+    max-height: 85vh;    /* Hauteur max : 85% de l'écran */
+    overflow-y: auto;    /* Active le scroll vertical si besoin */
+    margin-bottom: 20px; /* Espace de sécurité en bas */
+}
+
+/* --- ÉLÉMENTS INTERNES --- */
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-form input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+.profile-form .row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-logout {
+    width: 100%;
+    background: #cc0000;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.close-btn {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
 }
