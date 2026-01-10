@@ -181,7 +181,7 @@ function mettreAJourPanierAffichage() {
                 Frais de port : ${affichageFrais}
             </div>
             <div style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;">
-                Total à payer : <strong style="font-size:1.2em;">${totalFinal.toFixed(2)}€</strong>
+                Total à payer : <strong style="font-size:1.2em;">${totalFinal.toFixed(2)}</strong>
             </div>
         `;
     }
