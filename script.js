@@ -79,6 +79,29 @@ async function verifierAdmin() {
     return profile.role === 'admin';
 }
 
+// --- CONFIGURATION DES FRAIS DE PORT ---
+const SEUIL_GRATUITE = 60; // Livraison offerte dès 60€
+const FRAIS_STANDARD = 4.90; // Prix en dessous du seuil
+const FRAIS_LOURD = 8.50;    // Optionnel : si tu as des règles complexes plus tard
+
+function calculerFraisDePort() {
+    // 1. Calcul du sous-total du panier
+    let sousTotal = 0;
+    panier.forEach(p => sousTotal += p.prix);
+
+    // 2. Si le panier est vide, frais = 0
+    if (sousTotal === 0) return 0;
+
+    // 3. Règle de la gratuité
+    if (sousTotal >= SEUIL_GRATUITE) {
+        return 0; // C'est offert !
+    }
+
+    // 4. Sinon, prix standard
+    return FRAIS_STANDARD;
+}
+
+
 // --- 2. GESTION DU PANIER (LOCAL) ---
 let panier = JSON.parse(localStorage.getItem('monPanier')) || [];
 
@@ -121,15 +144,16 @@ function toggleCart() {
 function mettreAJourPanierAffichage() {
     const tbody = document.getElementById('cart-items');
     const totalSpan = document.getElementById('cart-total');
-    const countSpan = document.getElementById('cart-count'); // Cible le span du compteur
+    const countSpan = document.getElementById('cart-count'); 
     
     if(!tbody) return; 
 
     tbody.innerHTML = "";
-    let total = 0;
+    let sousTotal = 0;
 
+    // On génère les lignes du tableau
     panier.forEach((item, index) => {
-        total += item.prix;
+        sousTotal += item.prix;
         tbody.innerHTML += `
             <tr style="border-bottom: 1px solid #f9f9f9;">
                 <td style="padding: 8px 5px;">${item.titre}</td>
@@ -140,10 +164,29 @@ function mettreAJourPanierAffichage() {
             </tr>`;
     });
 
-    // Mise à jour des totaux
-    if(totalSpan) totalSpan.innerText = total.toFixed(2);
+    // --- LE CALCUL DYNAMIQUE ---
+    const fraisPort = calculerFraisDePort();
+    const totalFinal = sousTotal + fraisPort;
     
-    // Mise à jour du petit chiffre dans le bouton (sans effacer le texte "Panier")
+    // Astuce visuelle : Si frais = 0, on écrit "OFFERTS" en vert
+    const affichageFrais = fraisPort === 0 
+        ? `<span style="color:#28a745; font-weight:bold;">OFFERTS</span>` 
+        : `${fraisPort.toFixed(2)}€`;
+
+    // Affichage des totaux détaillés
+    if(totalSpan) {
+        totalSpan.innerHTML = `
+            <div style="font-size: 0.8em; color: #666; margin-bottom:5px;">Sous-total : ${sousTotal.toFixed(2)}€</div>
+            <div style="font-size: 0.9em; color: #666; margin-bottom:5px;">
+                Frais de port : ${affichageFrais}
+            </div>
+            <div style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;">
+                Total à payer : <strong style="font-size:1.2em;">${totalFinal.toFixed(2)}€</strong>
+            </div>
+        `;
+    }
+    
+    // Mise à jour du petit chiffre dans le bouton
     if(countSpan) countSpan.innerText = panier.length;
 }
 
@@ -692,80 +735,94 @@ function afficherBoutonsPayPal() {
         style: { color: 'gold', shape: 'rect', label: 'pay', height: 40 },
 
         createOrder: function(data, actions) {
-            let total = 0;
-            panier.forEach(p => total += p.prix);
+    // 1. Calcul du Sous-Total (Articles uniquement)
+    let sousTotal = 0;
+    panier.forEach(p => sousTotal += p.prix);
 
-            // CORRECTIF : On n'utilise plus actions.reject()
-            if(total <= 0) {
-                 alert("Votre panier est vide !");
-                 return; // On arrête simplement la fonction
+    // 2. Calcul des Frais de Port (Appel de notre cerveau)
+    const fraisPort = calculerFraisDePort();
+    
+    // 3. Calcul du Total Réel à facturer
+    const montantTotal = sousTotal + fraisPort;
+
+    // Sécurité anti-panier vide
+    if(sousTotal <= 0) {
+         alert("Votre panier est vide !");
+         return; 
+    }
+
+    // 4. Envoi de la facture à PayPal
+    return actions.order.create({
+        purchase_units: [{
+            description: "Commande Atelier OneTwoTree",
+            amount: { 
+                // C'est ICI que l'argent change de main. 
+                // On envoie le montant total (Articles + Port).
+                value: montantTotal.toFixed(2) 
             }
-
-            return actions.order.create({
-                purchase_units: [{
-                    description: "Commande Atelier",
-                    amount: { value: total.toFixed(2) }
-                }]
-            });
-        },
+        }]
+    });
+},
 
         onApprove: async function(data, actions) {
-            console.log("Paiement approuvé. Traitement en cours...");
+    console.log("Paiement approuvé. Traitement en cours...");
+    
+    try {
+        // 1. On valide le paiement chez PayPal d'abord
+        const orderData = await actions.order.capture();
+        console.log('Succès PayPal:', orderData);
+
+        // 2. On récupère les infos de l'utilisateur
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        let emailPayPal = (orderData.payer && orderData.payer.email_address) ? orderData.payer.email_address : "Email Inconnu";
+        let clientEmail = session ? session.user.email : "Invité (" + emailPayPal + ")";
+        let userId = session ? session.user.id : null;
+
+        // --- CORRECTION ICI : ON RECALCULE TOUT (ARTICLES + PORT) ---
+        let sousTotal = 0;
+        panier.forEach(p => sousTotal += p.prix);
+        
+        const fraisPort = calculerFraisDePort(); // On n'oublie pas le port !
+        const totalFinal = sousTotal + fraisPort; // C'est le montant réel payé
+
+        // 3. On prépare l'info du Point Relais
+        let infoRelais = null;
+        if (pointRelaisSelectionne) {
+            infoRelais = {
+                id: pointRelaisSelectionne.ID,
+                nom: pointRelaisSelectionne.Nom,
+                ville: pointRelaisSelectionne.Ville,
+                cp: pointRelaisSelectionne.CP
+            };
+        }
+
+        // 4. On envoie le tout proprement dans Supabase
+        const { error: insertError } = await supabaseClient.from('commandes').insert({
+            client_email: clientEmail,
+            user_id: userId,
+            articles: panier,
+            total: totalFinal, // On enregistre bien le TOTAL (avec port)
+            statut: "Payé (ID: " + orderData.id + ")",
+            point_relais: infoRelais 
+        });
+
+        if (insertError) {
+            console.error("Erreur sauvegarde BDD:", insertError);
+            alert("Paiement validé, mais erreur d'enregistrement commande. Contactez-nous.");
+        } else {
+            alert("Commande validée avec succès ! Merci.");
             
-            try {
-                // 1. On valide le paiement chez PayPal d'abord
-                const orderData = await actions.order.capture();
-                console.log('Succès PayPal:', orderData);
+            // On vide le panier et on ferme
+            viderPanier();
+            document.getElementById('cart-modal').style.display = 'none';
+        }
 
-                // 2. On récupère les infos de l'utilisateur (connecté ou non)
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                
-                // On sécurise les variables (pour éviter le crash si l'email manque)
-                let emailPayPal = (orderData.payer && orderData.payer.email_address) ? orderData.payer.email_address : "Email Inconnu";
-                let clientEmail = session ? session.user.email : "Invité (" + emailPayPal + ")";
-                let userId = session ? session.user.id : null;
-
-                // On recalcule le total pour être sûr
-                let total = 0;
-                panier.forEach(p => total += p.prix);
-
-                // 3. On prépare l'info du Point Relais (si le client en a choisi un)
-                let infoRelais = null;
-                if (pointRelaisSelectionne) {
-                    infoRelais = {
-                        id: pointRelaisSelectionne.ID,
-                        nom: pointRelaisSelectionne.Nom,
-                        ville: pointRelaisSelectionne.Ville,
-                        cp: pointRelaisSelectionne.CP
-                    };
-                }
-
-                // 4. On envoie le tout proprement dans Supabase
-                const { error: insertError } = await supabaseClient.from('commandes').insert({
-                    client_email: clientEmail,
-                    user_id: userId,
-                    articles: panier,
-                    total: total,
-                    statut: "Payé (ID: " + orderData.id + ")",
-                    point_relais: infoRelais 
-                });
-
-                if (insertError) {
-                    console.error("Erreur sauvegarde BDD:", insertError);
-                    alert("Paiement validé, mais erreur d'enregistrement commande. Contactez-nous.");
-                } else {
-                    alert("Commande validée avec succès ! Merci.");
-                    
-                    // On vide le panier et on ferme
-                    viderPanier();
-                    document.getElementById('cart-modal').style.display = 'none';
-                }
-
-            } catch (err) {
-                console.error("Erreur critique:", err);
-                alert("Une erreur est survenue lors du traitement final.");
-            }
-        },
+    } catch (err) {
+        console.error("Erreur critique:", err);
+        alert("Une erreur est survenue lors du traitement final.");
+    }
+},
 
         onError: function(err) {
             alert("Erreur PayPal globale : " + err);
