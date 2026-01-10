@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>L'Atelier de l'Artisan</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://widget.mondialrelay.com/parcelshop-picker/jquery.mondialrelay.parcelshoppicker.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR" defer></script>
 
@@ -23,9 +24,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
             border-radius: 8px;
         }
-
-        #cart-modal { width: 320px; z-index: 1000; }
-        #auth-modal { width: 300px; z-index: 2000; }
 
         /* Bouton Panier flottant */
         #cart-btn {
@@ -119,9 +117,9 @@
                 <tbody id="cart-items">
                     </tbody>
             </table>
-<div id="mondial-relay-section" style="margin-top:15px; display:none;">
-    <p style="font-weight:bold; font-size:0.9em;">Choisissez votre Point Relais :</p>
-    <div id="Zone_Widget"></div> <div id="Target_PMR" style="font-size:0.8em; color:#555; margin-top:5px;"></div>
+            <div id="mondial-relay-section" style="margin-top:15px; display:none;">
+             <p style="font-weight:bold; font-size:0.9em;">Choisissez votre Point Relais :</p>
+             <div id="Zone_Widget"></div> <div id="Target_PMR" style="font-size:0.8em; color:#555; margin-top:5px;"></div>
 </div>
             <hr style="border: 0; border-top: 1px solid #eee;">
             
@@ -149,7 +147,7 @@
         
         <form onsubmit="gererAuth(); return false;">
             <input type="email" id="client-email" class="auth-input" placeholder="Votre Email">
-            <input type="password" id="client-password" class="auth-input" placeholder="Mot de passe">
+            <input type="password" id="client-password" class="auth-input" placeholder="Mot de passe" autocomplete="current-password">
             
 
             <button type="submit" id="auth-action-btn" class="btn-primary" style="padding:10px;">

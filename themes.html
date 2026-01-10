@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nos Univers - L'Atelier</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js"></script>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -110,12 +112,22 @@
 
 
     <div id="cart-modal" class="modal" style="display:none;">
-        <h3>Mon Panier</h3>
+        <h3 style="text-align:center; margin-top:0;">Mon Panier</h3>
+        
         <table class="cart-table"><tbody id="cart-items"></tbody></table>
+        
         <p style="text-align:right;">Total: <strong><span id="cart-total">0</span> €</strong></p>
-        <div id="paypal-button-container"></div>
-        <button onclick="viderPanier()" class="btn-secondary">Vider</button>
-        <button onclick="toggleCart()" style="width:100%; margin-top:5px;">Fermer</button>
+
+        <div id="mondial-relay-section" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+            <p style="font-weight:bold; font-size:0.9em; margin-bottom:5px;">Point Relais :</p>
+            <div id="Zone_Widget"></div> 
+            <div id="Target_PMR" style="font-size:0.8em; color:#555; margin-top:5px; font-weight:bold;"></div>
+        </div>
+
+        <div id="paypal-button-container" style="margin-top:15px;"></div>
+        
+        <button onclick="viderPanier()" class="btn-secondary">Vider le panier</button>
+        <button onclick="toggleCart()" style="width:100%; margin-top:10px; padding:10px;">Fermer</button>
     </div>
 
     <div id="orders-modal" class="modal" style="width: 350px; z-index: 2000; display:none;">

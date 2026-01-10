@@ -319,19 +319,54 @@ body {
     opacity: 1;
     text-decoration: underline;
 }
+/* --- CORRECTIF MONDIAL RELAY --- */
 #Zone_Widget {
     width: 100%;
-    min-height: 300px;
-    margin-top: 15px;
-}
-#Zone_Widget {
-    width: 100%;
-    min-height: 400px; /* Force l'affichage du widget */
-    margin-top: 15px;
+    height: 500px; /* Hauteur fixe nécessaire pour la carte */
+    margin-top: 150px;
+    background: #f9f9f9;
     border: 1px solid #ccc;
+    display: block; /* S'assure qu'il n'est pas caché par défaut */
 }
-#Zone_Widget {
-    width: 100% !important;
-    min-height: 400px !important; /* Taille minimum requise pour la carte */
-    background: #f9f9f9; /* Permet de voir si la zone existe */
+
+/* =========================================
+   GESTION DES MODALES (PANIER & CONNEXION)
+   ========================================= */
+
+/* 1. LE CADRE GÉNÉRAL (CENTRAGE) */
+.modal {
+    display: none; 
+    position: fixed; 
+    
+    /* TECHNIQUE DU CENTRAGE ABSOLU */
+    top: 100px;
+    left: 50%;
+    transform: translate(-50%); /* Centre le point milieu de la fenêtre */
+    
+    background: white; 
+    border: 2px solid #333; 
+    padding: 20px; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* Ombre marquée */
+    border-radius: 8px;
+    
+    /* Gestion du scroll si l'écran est petit en hauteur */
+    max-height: 95vh; 
+    overflow-y: auto;
+}
+
+/* 2. TAILLE SPÉCIFIQUE DU PANIER (ID: #cart-modal) */
+#cart-modal { 
+    /* On force 600px pour que la carte Mondial Relay soit à l'aise */
+    width: 800px; 
+    
+    /* Sécurité : ne jamais dépasser la largeur de l'écran */
+    max-width: 95%; 
+    z-index: 1000; 
+}
+
+/* 3. TAILLE SPÉCIFIQUE DE LA CONNEXION */
+#auth-modal { 
+    width: 400px; 
+    max-width: 95%;
+    z-index: 2000; 
 }

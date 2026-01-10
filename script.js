@@ -1,4 +1,6 @@
 // --- 1. CONFIGURATION ---
+console.log("Script.js chargé");
+
 const SUPABASE_URL = 'https://yiccodvdibpwcggsptvc.supabase.co'; 
 const SUPABASE_KEY = 'sb_publishable_UNoN4Gw2cqx7YTU13NkSpg_75Ec1fdJ'; 
 
@@ -89,27 +91,33 @@ function ajouterAuPanier(titre, prix) {
 
 function toggleCart() {
     const modal = document.getElementById('cart-modal');
+    
+    // Sécurité : si le modal n'existe pas, on arrête tout de suite
+    if (!modal) return;
+
+    // 1. On ferme les autres fenêtres pour éviter le bazar
     fermerToutesModalesSauf('cart-modal');
     
-    if(modal) {
+    // 2. LA LOGIQUE CORRECTE (INTERRUPTEUR)
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        // --- CAS A : Il est fermé, donc on OUVRE ---
+        modal.style.display = 'block';
         
-if (modal.style.display === 'none' || modal.style.display === '') {
-    modal.style.display = 'block';
-    
-    // On attend un peu plus longtemps (300ms au lieu de 100ms) 
-    // pour être sûr que la modale est visible
-    setTimeout(() => {
-        const mrSection = document.getElementById('mondial-relay-section');
-        if (panier.length > 0) {
-            if(mrSection) mrSection.style.display = 'block';
-            initialiserMondialRelay(); // Lancement du widget
-        }
-    }, 300); 
-} 
-        } else {
-            modal.style.display = 'none';
-        }
+        // On lance les scripts (Mondial Relay / PayPal) avec un petit délai
+        setTimeout(() => {
+            const mrSection = document.getElementById('mondial-relay-section');
+            if (panier.length > 0) {
+                if(mrSection) mrSection.style.display = 'block';
+                initialiserMondialRelay(); 
+                afficherBoutonsPayPal(); 
+            }
+        }, 200); 
+
+    } else {
+        // --- CAS B : Il est ouvert, donc on FERME ---
+        modal.style.display = 'none';
     }
+}
 function mettreAJourPanierAffichage() {
     const tbody = document.getElementById('cart-items');
     const totalSpan = document.getElementById('cart-total');
@@ -222,24 +230,32 @@ async function payerPanier() {
 let pointRelaisSelectionne = null;
 
 function initialiserMondialRelay() {
-    // Vérification que JQuery et le plugin sont chargés
-    if (typeof $ === 'undefined' || typeof $.fn.MR_ParcelShopPicker === 'undefined') {
-        console.error("Mondial Relay ou jQuery non chargé");
-        return;
-    }
-ColLivMod: "24R", // Correspond au mode Point Relais LCI
-    $("#Zone_Widget").MR_ParcelShopPicker({
-        Target: "#Target_PMR", 
-        Brand: "TTMRSDBX", // <--- TRÈS IMPORTANT : 2 ESPACES ICI (Total 8 caractères)
-        Country: "FR", 
-        PostCode: "75001", 
-        ColLivMod: "24R",  // Ajoutez le mode de livraison (24R = Point Relais)
-        NbResults: "7",
-        OnParcelShopSelected: (data) => {
-            pointRelaisSelectionne = data;
-            document.getElementById('Target_PMR').innerHTML = 
-                `✅ <b>Relais choisi :</b> ${data.Nom} (${data.CP})`;
+    // On attend que le document (et jQuery) soit totalement prêt
+    $(document).ready(function() {
+        console.log("Tentative de chargement Mondial Relay...");
+
+        if ($("#Zone_Widget").length === 0) {
+            console.error("Erreur : La div #Zone_Widget n'existe pas sur cette page.");
+            return;
         }
+
+        // On vide la zone par sécurité
+        $('#Zone_Widget').empty();
+
+        // Lancement du widget
+        $("#Zone_Widget").MR_ParcelShopPicker({
+            Target: "#Target_PMR",
+            Brand: "CC23S8XN", 
+            Country: "FR",
+            PostCode: "75001",
+            ColLivMod: "24R",
+            NbResults: "7",
+            OnParcelShopSelected: function(data) {
+                pointRelaisSelectionne = data;
+                document.getElementById('Target_PMR').innerHTML = 
+                    `<strong>Relais :</strong> ${data.Nom} (${data.Ville})`;
+            }
+        });
     });
 }
 
@@ -255,6 +271,7 @@ function fermerToutesModalesSauf(idSauf) {
 }
 
 function toggleOrders() {
+    console.log("toggleOrders appelée");
     const modal = document.getElementById('orders-modal');
     if(!modal) {
         alert("Section historique introuvable dans le HTML.");
@@ -263,6 +280,7 @@ function toggleOrders() {
     fermerToutesModalesSauf('orders-modal');
     
     if (modal.style.display === 'none' || modal.style.display === '') {
+        console.log("Affichage de l'historique");
         afficherHistorique();
         modal.style.display = 'block';
     } else {
@@ -660,8 +678,15 @@ window.onload = function() {
 // --- 8. GESTION PAYPAL (INTELLIGENT) ---
 
 function afficherBoutonsPayPal() {
+    console.log("afficherBoutonsPayPal appelée");
     const container = document.getElementById('paypal-button-container');
-    if (!container || container.innerHTML !== "") return; 
+    if (!container || container.innerHTML !== "") return;
+
+    if (typeof paypal === 'undefined') {
+        console.error("PayPal SDK non chargé");
+        container.innerHTML = '<p style="color:red;">Erreur: PayPal non disponible.</p>';
+        return;
+    } 
 
     paypal.Buttons({
         style: { color: 'gold', shape: 'rect', label: 'pay', height: 40 },
@@ -669,7 +694,12 @@ function afficherBoutonsPayPal() {
         createOrder: function(data, actions) {
             let total = 0;
             panier.forEach(p => total += p.prix);
-            if(total === 0) return actions.reject();
+
+            // CORRECTIF : On n'utilise plus actions.reject()
+            if(total <= 0) {
+                 alert("Votre panier est vide !");
+                 return; // On arrête simplement la fonction
+            }
 
             return actions.order.create({
                 purchase_units: [{
@@ -680,76 +710,60 @@ function afficherBoutonsPayPal() {
         },
 
         onApprove: async function(data, actions) {
-            // DIAGNOSTIC 1
-            alert("Étape 1 : PayPal a validé le paiement. On capture...");
+            console.log("Paiement approuvé. Traitement en cours...");
             
             try {
+                // 1. On valide le paiement chez PayPal d'abord
                 const orderData = await actions.order.capture();
-                // DIAGNOSTIC 2
-                alert("Étape 2 : Capture réussie ! On prépare la sauvegarde Supabase...");
-                console.log('PayPal Data:', orderData);
-// Dans onApprove de PayPal, lors de l'insert Supabase :
-const { error } = await supabaseClient.from('commandes').insert({
-    client_email: clientEmail,
-    user_id: userId,
-    articles: panier,
-    total: total,
-    statut: "Payé",
-    // AJOUT DE L'INFO RELAIS
-    point_relais: pointRelaisSelectionne ? {
-        id: pointRelaisSelectionne.ID,
-        nom: pointRelaisSelectionne.Nom,
-        ville: pointRelaisSelectionne.Ville,
-        cp: pointRelaisSelectionne.CP
-    } : "Livraison standard ou non choisi"
-});
+                console.log('Succès PayPal:', orderData);
+
+                // 2. On récupère les infos de l'utilisateur (connecté ou non)
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 
-                // Sécurisation de l'email (parfois PayPal ne le renvoie pas direct)
-                let emailPayPal = (orderData.payer && orderData.payer.email_address) ? orderData.payer.email_address : "Inconnu";
+                // On sécurise les variables (pour éviter le crash si l'email manque)
+                let emailPayPal = (orderData.payer && orderData.payer.email_address) ? orderData.payer.email_address : "Email Inconnu";
                 let clientEmail = session ? session.user.email : "Invité (" + emailPayPal + ")";
                 let userId = session ? session.user.id : null;
 
+                // On recalcule le total pour être sûr
                 let total = 0;
                 panier.forEach(p => total += p.prix);
 
-                // DIAGNOSTIC 3
-                alert("Étape 3 : Envoi vers la table 'commandes'...");
+                // 3. On prépare l'info du Point Relais (si le client en a choisi un)
+                let infoRelais = null;
+                if (pointRelaisSelectionne) {
+                    infoRelais = {
+                        id: pointRelaisSelectionne.ID,
+                        nom: pointRelaisSelectionne.Nom,
+                        ville: pointRelaisSelectionne.Ville,
+                        cp: pointRelaisSelectionne.CP
+                    };
+                }
 
-                const { error } = await supabaseClient.from('commandes').insert({
+                // 4. On envoie le tout proprement dans Supabase
+                const { error: insertError } = await supabaseClient.from('commandes').insert({
                     client_email: clientEmail,
                     user_id: userId,
                     articles: panier,
                     total: total,
-                    statut: "Payé (ID: " + orderData.id + ")"
+                    statut: "Payé (ID: " + orderData.id + ")",
+                    point_relais: infoRelais 
                 });
 
-                if (error) {
-                    // C'est ici qu'on saura si Supabase refuse
-                    alert("ERREUR SUPABASE : " + error.message);
-                    console.error("Erreur Supabase:", error);
+                if (insertError) {
+                    console.error("Erreur sauvegarde BDD:", insertError);
+                    alert("Paiement validé, mais erreur d'enregistrement commande. Contactez-nous.");
                 } else {
-                    alert("SUCCÈS : Commande enregistrée dans la base !");
+                    alert("Commande validée avec succès ! Merci.");
                     
-                    // --- AJOUT : SAUVEGARDE LOCALE DE L'HISTORIQUE ---
-                    const nouvelleCommande = {
-                        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
-                        articles: panier,
-                        total: total.toFixed(2)
-                    };
-                    let historique = JSON.parse(localStorage.getItem('monHistorique')) || [];
-                    historique.push(nouvelleCommande);
-                    localStorage.setItem('monHistorique', JSON.stringify(historique));
-                    // -------------------------------------------------
-                    
+                    // On vide le panier et on ferme
                     viderPanier();
                     document.getElementById('cart-modal').style.display = 'none';
                 }
 
             } catch (err) {
-                // Si le code plante complètement (bug JS)
-                alert("CRASH JS : " + err.message);
-                console.error("Crash:", err);
+                console.error("Erreur critique:", err);
+                alert("Une erreur est survenue lors du traitement final.");
             }
         },
 
@@ -1072,4 +1086,19 @@ document.addEventListener("DOMContentLoaded", function() {
     bandeau.innerHTML = contenuFinal;
 
     document.body.prepend(bandeau);
+});
+
+// --- GESTION DU CLIC À L'EXTÉRIEUR ---
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('cart-modal');
+    const btn = document.getElementById('cart-btn');
+
+    // Si le panier est ouvert...
+    if (modal && modal.style.display === 'block') {
+        
+        // ...et que le clic n'est NI dans le panier, NI sur le bouton "Panier"
+        if (!modal.contains(event.target) && !btn.contains(event.target)) {
+            toggleCart(); // On ferme le panier proprement
+        }
+    }
 });
