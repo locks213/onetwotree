@@ -184,6 +184,29 @@ body {
     cursor: zoom-in;
 }
 
+.product-thumbs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 8px;
+    min-height: 46px;
+}
+
+.product-thumb-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.75;
+}
+
+.product-thumb-image.active {
+    border-color: #5a4a42;
+    opacity: 1;
+}
+
 .image-lightbox {
     position: fixed;
     inset: 0;
