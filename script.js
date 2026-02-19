@@ -715,6 +715,52 @@ async function chargerListeAdmin() {
     });
 }
 
+let imagesSelectionneesAdmin = [];
+
+function mettreAJourInfoImagesAdmin() {
+    const info = document.getElementById('image-upload-info');
+    if (!info) return;
+
+    if (imagesSelectionneesAdmin.length === 0) {
+        info.innerHTML = "Aucune image sélectionnée.";
+        return;
+    }
+
+    const noms = imagesSelectionneesAdmin.map(file => file.name).join(', ');
+    info.innerHTML = `${imagesSelectionneesAdmin.length} image(s) sélectionnée(s) : ${noms}`;
+}
+
+function initialiserSelectionImagesAdmin() {
+    const fileInput = document.getElementById('image-upload');
+    if (!fileInput) return;
+
+    if (fileInput.dataset.multiInit === '1') {
+        return;
+    }
+
+    fileInput.addEventListener('change', function() {
+        const nouveauxFichiers = Array.from(fileInput.files || []);
+
+        nouveauxFichiers.forEach(file => {
+            const existeDeja = imagesSelectionneesAdmin.some(existing =>
+                existing.name === file.name &&
+                existing.size === file.size &&
+                existing.lastModified === file.lastModified
+            );
+
+            if (!existeDeja) {
+                imagesSelectionneesAdmin.push(file);
+            }
+        });
+
+        fileInput.value = '';
+        mettreAJourInfoImagesAdmin();
+    });
+
+    fileInput.dataset.multiInit = '1';
+    mettreAJourInfoImagesAdmin();
+}
+
 async function ajouterProduit() {
     // 1. Vérification Admin
     const isAdmin = await verifierAdmin();
@@ -736,8 +782,12 @@ async function ajouterProduit() {
     let imageUrls = []; // Liste des images uploadées
 
     // 2. GESTION DE L'UPLOAD D'IMAGE
-    if (fileInput.files.length > 0) {
-        for (const [index, file] of Array.from(fileInput.files).entries()) {
+    const fichiersAAjouter = imagesSelectionneesAdmin.length > 0
+        ? imagesSelectionneesAdmin
+        : Array.from(fileInput.files || []);
+
+    if (fichiersAAjouter.length > 0) {
+        for (const [index, file] of fichiersAAjouter.entries()) {
             const fileName = Date.now() + '-' + index + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
 
             const { error: uploadError } = await supabaseClient
@@ -781,6 +831,8 @@ async function ajouterProduit() {
         titreInput.value = ''; 
         prixInput.value = '';
         fileInput.value = ''; 
+        imagesSelectionneesAdmin = [];
+        mettreAJourInfoImagesAdmin();
         catInput.value = 'Divers';
         
         chargerListeAdmin(); 
@@ -835,6 +887,8 @@ function initialiserApplication() {
 
     // 4. Lancement Admin (si sur page admin)
     if(document.getElementById('admin-product-list')) {
+        initialiserSelectionImagesAdmin();
+
         // On vérifie si l'admin est connecté
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
