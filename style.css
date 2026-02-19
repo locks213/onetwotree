@@ -152,6 +152,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: zoom-in;
     transition: transform 0.5s ease;
 }
 
@@ -177,6 +178,47 @@ body {
 
 .theme-card:hover img {
     transform: scale(1.1); /* Zoom léger sur l'image */
+}
+
+.product-clickable-image {
+    cursor: zoom-in;
+}
+
+.image-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 30000;
+    padding: 20px;
+}
+
+.image-lightbox.active {
+    display: flex;
+}
+
+.image-lightbox-img {
+    max-width: min(95vw, 1200px);
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+
+.image-lightbox-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 2.5rem;
+    line-height: 1;
+    cursor: pointer;
 }
 
 /* =========================================

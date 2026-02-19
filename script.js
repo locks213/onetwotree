@@ -557,7 +557,7 @@ async function chargerVitrine(filtre = "Tout") {
             card.className = 'card';
             card.innerHTML = `
                 <div style="height: 200px; overflow: hidden; background: white; border-bottom: 1px solid #eee;">
-                    <img src="${imageSrc}" alt="${prod.titre}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.3s;" 
+                    <img src="${imageSrc}" alt="${prod.titre}" class="product-clickable-image" style="width:100%; height:100%; object-fit:cover; transition: transform 0.3s;" 
                     onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 </div>
                 <h3 style="margin: 10px 0;">${prod.titre}</h3>
@@ -568,6 +568,76 @@ async function chargerVitrine(filtre = "Tout") {
             container.appendChild(card);
         });
     }
+}
+
+function obtenirOuCreerLightboxImage() {
+    let lightbox = document.getElementById('image-lightbox');
+
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'image-lightbox';
+        lightbox.className = 'image-lightbox';
+        lightbox.innerHTML = `
+            <button type="button" class="image-lightbox-close" aria-label="Fermer">&times;</button>
+            <img id="image-lightbox-img" class="image-lightbox-img" alt="Image agrandie">
+        `;
+
+        lightbox.addEventListener('click', function(event) {
+            if (event.target === lightbox) {
+                fermerImageAgrandie();
+            }
+        });
+
+        lightbox.querySelector('.image-lightbox-close').addEventListener('click', function() {
+            fermerImageAgrandie();
+        });
+
+        document.body.appendChild(lightbox);
+    }
+
+    return lightbox;
+}
+
+function ouvrirImageAgrandie(src, altText) {
+    if (!src) return;
+
+    const lightbox = obtenirOuCreerLightboxImage();
+    const lightboxImage = document.getElementById('image-lightbox-img');
+
+    lightboxImage.src = src;
+    lightboxImage.alt = altText || 'Image agrandie';
+    lightbox.classList.add('active');
+}
+
+function fermerImageAgrandie() {
+    const lightbox = document.getElementById('image-lightbox');
+    if (!lightbox) return;
+
+    lightbox.classList.remove('active');
+}
+
+function initialiserZoomImages() {
+    document.addEventListener('click', function(event) {
+        const imageProduit = event.target.closest('.product-clickable-image');
+        if (!imageProduit) return;
+
+        ouvrirImageAgrandie(imageProduit.src, imageProduit.alt);
+    });
+
+    document.addEventListener('dblclick', function(event) {
+        const imageTheme = event.target.closest('.theme-card img');
+        if (!imageTheme) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        ouvrirImageAgrandie(imageTheme.src, imageTheme.alt);
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            fermerImageAgrandie();
+        }
+    });
 }
 
 
@@ -688,7 +758,7 @@ async function supprimerProduit(id) {
 
 
 // --- 7. DÉMARRAGE ---
-window.onload = function() {
+function initialiserApplication() {
     // Créer et ajouter le logo flottant
     const logoDiv = document.createElement('div');
     logoDiv.className = 'fixed-logo';
@@ -697,9 +767,13 @@ window.onload = function() {
 
     // 1. Initialiser l'affichage du panier au chargement
     mettreAJourPanierAffichage();
+    initialiserZoomImages();
 
     // 2. Lancement vitrine (si sur page d'accueil, pas sur themes.html)
-    if(document.getElementById('gallery-container') && !document.querySelector('.themes-navigation')) chargerVitrine();
+    const estPageObjetPersonnalisable = window.location.pathname.includes('objetpersonnalisable.html');
+    if (document.getElementById('gallery-container') && !document.querySelector('.themes-navigation') && !estPageObjetPersonnalisable) {
+        chargerVitrine();
+    }
     
     // 3. Vérification Auth Client (partout)
     verificationSession();
@@ -716,7 +790,9 @@ window.onload = function() {
             }
         });
     }
-};
+}
+
+window.addEventListener('load', initialiserApplication);
 
 // --- 8. GESTION PAYPAL (INTELLIGENT) ---
 
