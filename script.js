@@ -510,6 +510,32 @@ async function verificationSession() {
     }
 }
 
+function extraireSourcesImagesProduit(imageField) {
+    if (Array.isArray(imageField)) {
+        return imageField.filter(url => typeof url === 'string' && url.trim() !== '');
+    }
+
+    if (typeof imageField === 'string') {
+        const valeur = imageField.trim();
+        if (!valeur) return [];
+
+        if (valeur.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(valeur);
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+                }
+            } catch (e) {
+                console.warn("Impossible de parser la liste d'images, fallback sur image unique.");
+            }
+        }
+
+        return [valeur];
+    }
+
+    return [];
+}
+
 
 // --- 5. FONCTIONS VITRINE (ACCUEIL) ---
 async function chargerVitrine(filtre = "Tout") {
@@ -551,7 +577,8 @@ async function chargerVitrine(filtre = "Tout") {
         }
 
         produits.forEach(prod => {
-            const imageSrc = prod.image_file ? prod.image_file : 'img/default.jpg'; 
+            const imagesProduit = extraireSourcesImagesProduit(prod.image_file);
+            const imageSrc = imagesProduit.length > 0 ? imagesProduit[0] : 'img/default.jpg'; 
             
             const card = document.createElement('div');
             card.className = 'card';
@@ -560,11 +587,36 @@ async function chargerVitrine(filtre = "Tout") {
                     <img src="${imageSrc}" alt="${prod.titre}" class="product-clickable-image" style="width:100%; height:100%; object-fit:cover; transition: transform 0.3s;" 
                     onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 </div>
+                <div class="product-thumbs"></div>
                 <h3 style="margin: 10px 0;">${prod.titre}</h3>
                 <p style="font-size: 0.8em; color: #777;">${prod.categorie || 'Non classé'}</p>
                 <p style="font-weight: bold; color: #555;">${prod.prix} €</p>
                 <button class="btn-primary" onclick="ajouterAuPanier('${prod.titre.replace(/'/g, "\\'")}', ${prod.prix})">Ajouter au panier</button>
             `;
+
+            if (imagesProduit.length > 1) {
+                const mainImage = card.querySelector('.product-clickable-image');
+                const thumbsContainer = card.querySelector('.product-thumbs');
+
+                imagesProduit.forEach((url, index) => {
+                    const thumb = document.createElement('img');
+                    thumb.src = url;
+                    thumb.alt = `${prod.titre} - vue ${index + 1}`;
+                    thumb.className = 'product-thumb-image' + (index === 0 ? ' active' : '');
+
+                    thumb.addEventListener('click', function() {
+                        mainImage.src = url;
+
+                        thumbsContainer.querySelectorAll('.product-thumb-image').forEach(el => {
+                            el.classList.remove('active');
+                        });
+                        thumb.classList.add('active');
+                    });
+
+                    thumbsContainer.appendChild(thumb);
+                });
+            }
+
             container.appendChild(card);
         });
     }
@@ -652,12 +704,61 @@ async function chargerListeAdmin() {
     
     listDiv.innerHTML = "";
     produits.forEach(prod => {
+        const imagesProduit = extraireSourcesImagesProduit(prod.image_file);
+        const totalImages = imagesProduit.length > 0 ? imagesProduit.length : 1;
+
         listDiv.innerHTML += `
             <div class="product-list-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                <span>${prod.titre} — <strong>${prod.prix}€</strong></span>
+                <span>${prod.titre} — <strong>${prod.prix}€</strong> <small style="color:#666;">(${totalImages} photo${totalImages > 1 ? 's' : ''})</small></span>
                 <span style="color:red; cursor:pointer;" onclick="supprimerProduit(${prod.id})">[Supprimer]</span>
             </div>`;
     });
+}
+
+let imagesSelectionneesAdmin = [];
+
+function mettreAJourInfoImagesAdmin() {
+    const info = document.getElementById('image-upload-info');
+    if (!info) return;
+
+    if (imagesSelectionneesAdmin.length === 0) {
+        info.innerHTML = "Aucune image sélectionnée.";
+        return;
+    }
+
+    const noms = imagesSelectionneesAdmin.map(file => file.name).join(', ');
+    info.innerHTML = `${imagesSelectionneesAdmin.length} image(s) sélectionnée(s) : ${noms}`;
+}
+
+function initialiserSelectionImagesAdmin() {
+    const fileInput = document.getElementById('image-upload');
+    if (!fileInput) return;
+
+    if (fileInput.dataset.multiInit === '1') {
+        return;
+    }
+
+    fileInput.addEventListener('change', function() {
+        const nouveauxFichiers = Array.from(fileInput.files || []);
+
+        nouveauxFichiers.forEach(file => {
+            const existeDeja = imagesSelectionneesAdmin.some(existing =>
+                existing.name === file.name &&
+                existing.size === file.size &&
+                existing.lastModified === file.lastModified
+            );
+
+            if (!existeDeja) {
+                imagesSelectionneesAdmin.push(file);
+            }
+        });
+
+        fileInput.value = '';
+        mettreAJourInfoImagesAdmin();
+    });
+
+    fileInput.dataset.multiInit = '1';
+    mettreAJourInfoImagesAdmin();
 }
 
 async function ajouterProduit() {
@@ -678,42 +779,46 @@ async function ajouterProduit() {
         return;
     }
 
-    let imageUrl = "img/default.jpg"; // Image par défaut si rien n'est envoyé
+    let imageUrls = []; // Liste des images uploadées
 
     // 2. GESTION DE L'UPLOAD D'IMAGE
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        
-        // On crée un nom de fichier unique pour éviter d'écraser une autre image
-        // Ex: 1678945612-mon-image.jpg
-        const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+    const fichiersAAjouter = imagesSelectionneesAdmin.length > 0
+        ? imagesSelectionneesAdmin
+        : Array.from(fileInput.files || []);
 
-        // On envoie chez Supabase Storage
-        const { data, error: uploadError } = await supabaseClient
-            .storage
-            .from('images-produits') // Le nom exact de ton bucket créé à l'étape 1
-            .upload(fileName, file);
+    if (fichiersAAjouter.length > 0) {
+        for (const [index, file] of fichiersAAjouter.entries()) {
+            const fileName = Date.now() + '-' + index + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
 
-        if (uploadError) {
-            console.error(uploadError);
-            alert("Erreur lors de l'envoi de l'image : " + uploadError.message);
-            return; // On arrête tout si l'image plante
+            const { error: uploadError } = await supabaseClient
+                .storage
+                .from('images-produits')
+                .upload(fileName, file);
+
+            if (uploadError) {
+                console.error(uploadError);
+                alert("Erreur lors de l'envoi de l'image : " + uploadError.message);
+                return;
+            }
+
+            const { data: publicUrlData } = supabaseClient
+                .storage
+                .from('images-produits')
+                .getPublicUrl(fileName);
+
+            imageUrls.push(publicUrlData.publicUrl);
         }
-
-        // Si ça a marché, on récupère l'URL publique pour l'afficher sur le site
-        const { data: publicUrlData } = supabaseClient
-            .storage
-            .from('images-produits')
-            .getPublicUrl(fileName);
-            
-        imageUrl = publicUrlData.publicUrl;
     }
+
+    const imageFieldValue = imageUrls.length === 0
+        ? "img/default.jpg"
+        : (imageUrls.length === 1 ? imageUrls[0] : JSON.stringify(imageUrls));
 
     // 3. ENREGISTREMENT DU PRODUIT (Comme avant, mais avec la nouvelle URL)
     const { error } = await supabaseClient.from('produits').insert([{ 
         titre: titreInput.value, 
         prix: parseFloat(prixInput.value), 
-        image_file: imageUrl, // <-- C'est ici que l'URL générée est stockée
+        image_file: imageFieldValue,
         categorie: catInput.value, 
     }]);
 
@@ -726,6 +831,8 @@ async function ajouterProduit() {
         titreInput.value = ''; 
         prixInput.value = '';
         fileInput.value = ''; 
+        imagesSelectionneesAdmin = [];
+        mettreAJourInfoImagesAdmin();
         catInput.value = 'Divers';
         
         chargerListeAdmin(); 
@@ -780,6 +887,8 @@ function initialiserApplication() {
 
     // 4. Lancement Admin (si sur page admin)
     if(document.getElementById('admin-product-list')) {
+        initialiserSelectionImagesAdmin();
+
         // On vérifie si l'admin est connecté
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
