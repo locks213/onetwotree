@@ -259,7 +259,7 @@ async function payerPanier() {
         localStorage.setItem('monHistorique', JSON.stringify(historique));
 
         // 4. Redirection PayPal
-        const emailPayPal = "votre-email-paypal@exemple.com"; // REMETS TON EMAIL PAYPAL ICI
+        const emailPayPal = "https://paypal.me/onetwotreecreation?locale.x=fr_FR&country.x=FR"; // REMETS TON EMAIL PAYPAL ICI
         const url = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${emailPayPal}&currency_code=EUR&amount=${total}&item_name=${encodeURIComponent(nomCommande)}`;
         
         // On vide le panier et on redirige
